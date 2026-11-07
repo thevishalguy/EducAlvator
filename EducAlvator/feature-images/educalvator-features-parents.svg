@@ -1,0 +1,161 @@
+<svg width="1600" height="1160" viewBox="0 0 1600 1160" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.06"/>
+    </filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="46"/>
+    </filter>
+    <clipPath id="clipP"><rect x="60" y="686" width="469" height="400" rx="28"/></clipPath>
+    <style>
+      .eyebrow{font-weight:700;font-size:18px;fill:#9ca3af;letter-spacing:.3px}
+      .title{font-weight:800;font-size:50px;fill:#111827;letter-spacing:-1.6px}
+      .word{font-weight:800;font-size:30px;fill:#111827;letter-spacing:-1px}
+      .ct{font-weight:800;font-size:25px;fill:#111827;letter-spacing:-.6px}
+      .ctd{font-weight:800;font-size:25px;fill:#ffffff;letter-spacing:-.6px}
+      .body{font-weight:500;font-size:16.5px;fill:#6b7280}
+      .bodyd{font-weight:500;font-size:16.5px;fill:#d1d5db}
+      .chip{font-weight:700;font-size:16px;fill:#111827}
+      .mut{font-weight:600;font-size:14px;fill:#9ca3af}
+      .acc{font-weight:700;font-size:15px;fill:#e05d43}
+      .pill{font-weight:700;font-size:16px;fill:#ffffff}
+    </style>
+  </defs>
+
+  <rect width="1600" height="1160" fill="#fdfbf7"/>
+
+  <!-- ============ header ============ -->
+  <svg x="60" y="46" width="48" height="48" viewBox="357 357 2830 2830">
+    <path d="M2436.076,576.608l-1482.95,-200.166l-552.212,879.495l158.669,1000.153l863.233,910.775l1719.578,-942.175l-10.02,-824.172l-1440.954,709.537l1126.824,-1177.408" fill="#e05d43"/>
+    <path d="M1394.2,813.129l11.621,955.876l795.195,-965.685l-806.817,9.809Z" fill="#ffffff"/>
+  </svg>
+  <text x="120" y="82" class="word">EducAlvator<tspan fill="#e05d43">.</tspan></text>
+
+  <rect x="1396" y="52" width="144" height="40" rx="20" fill="#e05d43"/>
+  <text x="1468" y="78" class="pill" text-anchor="middle">For parents</text>
+
+  <text x="62" y="152" class="eyebrow">Built for students, trusted by parents</text>
+  <text x="60" y="210" class="title">A calmer picture of progress.</text>
+
+  <!-- ============ CARD 1 · Family Dashboard (white) ============ -->
+  <rect x="60" y="250" width="469" height="400" rx="28" fill="#ffffff" stroke="#f3f4f6" filter="url(#soft)"/>
+  <rect x="96" y="286" width="54" height="54" rx="16" fill="#fff4ed"/>
+  <g stroke="#e05d43" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(110,300)">
+    <rect x="3" y="3" width="8" height="8" rx="2"/><rect x="15" y="3" width="8" height="8" rx="2"/><rect x="3" y="15" width="8" height="8" rx="2"/><rect x="15" y="15" width="8" height="8" rx="2"/>
+  </g>
+  <text x="96" y="378" class="ct">Family Dashboard</text>
+  <text x="96" y="412" class="body">Every learner in one calm view — no digging</text>
+  <text x="96" y="434" class="body">through apps to see how the week went.</text>
+  <!-- student rows -->
+  <rect x="96" y="464" width="397" height="74" rx="16" fill="#fdfbf7" stroke="#f3f4f6"/>
+  <circle cx="134" cy="501" r="24" fill="#f0edf6"/><text x="134" y="507" font-weight="800" font-size="17px" fill="#111827" text-anchor="middle">AK</text>
+  <text x="172" y="494" class="chip">Aarav K.</text><text x="172" y="518" class="mut">Grade 10</text>
+  <rect x="396" y="486" width="82" height="30" rx="10" fill="#fff4ed"/><text x="437" y="506" class="acc" text-anchor="middle">🔥 12 days</text>
+  <rect x="96" y="550" width="397" height="74" rx="16" fill="#fdfbf7" stroke="#f3f4f6"/>
+  <circle cx="134" cy="587" r="24" fill="#e9f3f1"/><text x="134" y="593" font-weight="800" font-size="17px" fill="#111827" text-anchor="middle">MK</text>
+  <text x="172" y="580" class="chip">Meera K.</text><text x="172" y="604" class="mut">Grade 7</text>
+  <rect x="396" y="572" width="82" height="30" rx="10" fill="#fff4ed"/><text x="437" y="592" class="acc" text-anchor="middle">🔥 5 days</text>
+
+  <!-- ============ CARD 2 · Pictorial Reports (pastel orange) ============ -->
+  <rect x="565" y="250" width="469" height="400" rx="28" fill="#fff4ed" stroke="#f1e5dc" filter="url(#soft)"/>
+  <rect x="601" y="286" width="54" height="54" rx="16" fill="#e05d43"/>
+  <g stroke="#ffffff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(615,300)">
+    <path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9h9a9 9 0 0 0-9-9z" fill="#ffffff" fill-opacity="0.35"/>
+  </g>
+  <text x="601" y="378" class="ct">Pictorial Reports</text>
+  <text x="601" y="412" class="body">A monthly report drawn as simple charts —</text>
+  <text x="601" y="434" class="body">subjects, time spent and modules done.</text>
+  <!-- donut -->
+  <g transform="translate(676,540)">
+    <circle r="52" fill="none" stroke="#ffffff" stroke-width="20"/>
+    <circle r="52" fill="none" stroke="#e05d43" stroke-width="20" stroke-dasharray="196 327" stroke-linecap="round" transform="rotate(-90)"/>
+    <circle r="52" fill="none" stroke="#c7b8d6" stroke-width="20" stroke-dasharray="82 327" stroke-dashoffset="-200" stroke-linecap="round" transform="rotate(-90)"/>
+  </g>
+  <text x="676" y="534" font-weight="800" font-size="24px" fill="#111827" text-anchor="middle">60%</text>
+  <text x="676" y="556" class="mut" text-anchor="middle">Maths</text>
+  <!-- legend bars -->
+  <g>
+    <circle cx="790" cy="494" r="6" fill="#e05d43"/><text x="806" y="499" class="chip">Maths</text><rect x="806" y="508" width="200" height="8" rx="4" fill="#ffffff"/><rect x="806" y="508" width="150" height="8" rx="4" fill="#e05d43"/>
+    <circle cx="790" cy="540" r="6" fill="#c7b8d6"/><text x="806" y="545" class="chip">English</text><rect x="806" y="554" width="200" height="8" rx="4" fill="#ffffff"/><rect x="806" y="554" width="96" height="8" rx="4" fill="#c7b8d6"/>
+    <circle cx="790" cy="586" r="6" fill="#9cc7bd"/><text x="806" y="591" class="chip">Science</text><rect x="806" y="600" width="200" height="8" rx="4" fill="#ffffff"/><rect x="806" y="600" width="124" height="8" rx="4" fill="#9cc7bd"/>
+  </g>
+
+  <!-- ============ CARD 3 · Streaks & Attendance (pastel teal) ============ -->
+  <rect x="1070" y="250" width="469" height="400" rx="28" fill="#e9f3f1" stroke="#dbe9e5" filter="url(#soft)"/>
+  <rect x="1106" y="286" width="54" height="54" rx="16" fill="#e05d43"/>
+  <g stroke="#ffffff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(1120,300)">
+    <path d="M13 2c1 4-2 5-2 8a3 3 0 0 0 6 0c0-1 0-2-1-3 3 2 5 5 5 9a8 8 0 0 1-16 0c0-5 4-7 5-11 1 1 2 2 3-2z"/>
+  </g>
+  <text x="1106" y="378" class="ct">Streaks &amp; Attendance</text>
+  <text x="1106" y="412" class="body">A daily check-in builds a streak, so showing</text>
+  <text x="1106" y="434" class="body">up becomes its own small reward.</text>
+  <!-- week dots -->
+  <g font-weight="700" font-size="13px" fill="#6b7280" text-anchor="middle">
+    <text x="1130" y="486">M</text><text x="1181" y="486">T</text><text x="1232" y="486">W</text><text x="1283" y="486">T</text><text x="1334" y="486">F</text><text x="1385" y="486">S</text><text x="1436" y="486">S</text>
+  </g>
+  <g>
+    <circle cx="1130" cy="524" r="20" fill="#e05d43"/><circle cx="1181" cy="524" r="20" fill="#e05d43"/><circle cx="1232" cy="524" r="20" fill="#e05d43"/><circle cx="1283" cy="524" r="20" fill="#e05d43"/><circle cx="1334" cy="524" r="20" fill="#e05d43"/>
+    <circle cx="1385" cy="524" r="20" fill="#ffffff"/><circle cx="1436" cy="524" r="20" fill="#ffffff"/>
+  </g>
+  <g stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1123 524l5 5 9-10"/><path d="M1174 524l5 5 9-10"/><path d="M1225 524l5 5 9-10"/><path d="M1276 524l5 5 9-10"/><path d="M1327 524l5 5 9-10"/>
+  </g>
+  <rect x="1106" y="566" width="397" height="58" rx="16" fill="#ffffff" stroke="#dbe9e5"/>
+  <text x="1126" y="602" font-weight="800" font-size="20px" fill="#111827">🔥 12-day streak</text>
+  <text x="1483" y="602" class="mut" text-anchor="end">checked in today</text>
+
+  <!-- ============ CARD 4 · Simple Plans (dark panel) ============ -->
+  <rect x="60" y="686" width="469" height="400" rx="28" fill="#1c1917" filter="url(#soft)"/>
+  <g clip-path="url(#clipP)"><circle cx="505" cy="712" r="90" fill="#e05d43" opacity="0.22" filter="url(#glow)"/></g>
+  <rect x="96" y="722" width="54" height="54" rx="16" fill="#ffffff" fill-opacity="0.1"/>
+  <g stroke="#e05d43" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(110,736)">
+    <path d="M2 11l9-9 11 1 1 11-9 9z"/><circle cx="15.5" cy="8.5" r="1.8"/>
+  </g>
+  <text x="96" y="814" class="ctd">Simple, honest plans</text>
+  <text x="96" y="848" class="bodyd">Transparent tiers in rupees — no hidden</text>
+  <text x="96" y="870" class="bodyd">fees, switch or cancel any time.</text>
+  <!-- plan rows -->
+  <rect x="96" y="900" width="397" height="46" rx="14" fill="#ffffff" fill-opacity="0.06"/>
+  <text x="116" y="929" font-weight="700" font-size="16px" fill="#ffffff">Free Explorer</text><text x="473" y="929" font-weight="700" font-size="16px" fill="#9ca3af" text-anchor="end">₹0 forever</text>
+  <rect x="96" y="954" width="397" height="52" rx="14" fill="#e05d43"/>
+  <text x="116" y="980" font-weight="800" font-size="16px" fill="#ffffff">Pro Student</text><text x="116" y="998" font-weight="600" font-size="12px" fill="#ffffff" fill-opacity="0.85">Most room to grow</text><text x="473" y="988" font-weight="800" font-size="18px" fill="#ffffff" text-anchor="end">₹799<tspan font-size="12px" fill="#ffffff" fill-opacity="0.8"> /mo</tspan></text>
+  <rect x="96" y="1014" width="397" height="46" rx="14" fill="#ffffff" fill-opacity="0.06"/>
+  <text x="116" y="1043" font-weight="700" font-size="16px" fill="#ffffff">Max Family<tspan font-size="12px" fill="#9ca3af"> · 2 students</tspan></text><text x="473" y="1043" font-weight="700" font-size="16px" fill="#9ca3af" text-anchor="end">₹1,499 /mo</text>
+
+  <!-- ============ CARD 5 · Student Profiles (pastel purple) ============ -->
+  <rect x="565" y="686" width="469" height="400" rx="28" fill="#f0edf6" stroke="#e5e0ee" filter="url(#soft)"/>
+  <rect x="601" y="722" width="54" height="54" rx="16" fill="#e05d43"/>
+  <g stroke="#ffffff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(615,736)">
+    <circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3.5-6 7-6s7 2 7 6"/><line x1="19" y1="7" x2="19" y2="13"/><line x1="16" y1="10" x2="22" y2="10"/>
+  </g>
+  <text x="601" y="814" class="ct">Student Profiles</text>
+  <text x="601" y="848" class="body">Give each child their own login and grade.</text>
+  <text x="601" y="870" class="body">Content and games stay locked to it.</text>
+  <!-- profiles -->
+  <rect x="601" y="902" width="193" height="152" rx="16" fill="#ffffff" stroke="#e5e0ee"/>
+  <circle cx="697" cy="952" r="30" fill="#fff4ed"/><text x="697" y="960" font-weight="800" font-size="22px" fill="#111827" text-anchor="middle">AK</text>
+  <text x="697" y="1004" class="chip" text-anchor="middle">Aarav · G10</text>
+  <rect x="640" y="1020" width="114" height="22" rx="8" fill="#f0edf6"/><text x="697" y="1035" class="mut" text-anchor="middle">🔒 grade-locked</text>
+  <rect x="806" y="902" width="193" height="152" rx="16" fill="#ffffff" stroke="#e5e0ee" stroke-dasharray="6 6"/>
+  <circle cx="902" cy="948" r="26" fill="#fdfbf7" stroke="#e5e0ee"/>
+  <g stroke="#e05d43" stroke-width="2.4" stroke-linecap="round"><line x1="902" y1="938" x2="902" y2="958"/><line x1="892" y1="948" x2="912" y2="948"/></g>
+  <text x="902" y="1000" class="acc" text-anchor="middle">Create student</text>
+  <text x="902" y="1026" class="mut" text-anchor="middle">up to your plan limit</text>
+
+  <!-- ============ CARD 6 · Private & Safe (white) ============ -->
+  <rect x="1070" y="686" width="469" height="400" rx="28" fill="#ffffff" stroke="#f3f4f6" filter="url(#soft)"/>
+  <rect x="1106" y="722" width="54" height="54" rx="16" fill="#e9f3f1"/>
+  <g stroke="#e05d43" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(1120,736)">
+    <path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/>
+  </g>
+  <text x="1106" y="814" class="ct">Private &amp; Safe</text>
+  <text x="1106" y="848" class="body">A protected space built around your child —</text>
+  <text x="1106" y="870" class="body">with grown-up controls that stay with you.</text>
+  <!-- bullet list -->
+  <g>
+    <circle cx="1118" cy="912" r="4" fill="#e05d43"/><text x="1136" y="917" class="chip">Grade-locked, age-right content</text>
+    <circle cx="1118" cy="952" r="4" fill="#e05d43"/><text x="1136" y="957" class="chip">Daily usage caps per student</text>
+    <circle cx="1118" cy="992" r="4" fill="#e05d43"/><text x="1136" y="997" class="chip">AI keys kept on the server, never shared</text>
+    <circle cx="1118" cy="1032" r="4" fill="#e05d43"/><text x="1136" y="1037" class="chip">Parent-only plan &amp; profile controls</text>
+  </g>
+</svg>

@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>EduMath Runner</title>
+
+<!-- KaTeX for rendering LaTeX math in the HUD / gate labels -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" crossorigin="anonymous" />
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" crossorigin="anonymous"></script>
+<!-- Three.js (r128 UMD build, global THREE) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    --bg: #0e1424;
+    --panel: rgba(16, 24, 48, 0.92);
+    --accent: #4dd0e1;
+    --accent-2: #ffca28;
+    --good: #43e97b;
+    --bad: #ff5370;
+    --text: #eaf2ff;
+    --muted: #9fb3d1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  #game { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  /* ---------- Shared overlay chrome ---------- */
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+    z-index: 30;
+  }
+  .hidden { display: none !important; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid rgba(120, 160, 255, 0.25);
+    border-radius: 20px;
+    padding: 32px 34px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+  }
+  h1 {
+    font-size: 2.1rem; line-height: 1.1; margin-bottom: 6px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: 0.5px;
+  }
+  .tagline { color: var(--muted); font-size: 0.95rem; margin-bottom: 22px; }
+
+  label { display: block; text-align: left; font-size: 0.82rem; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  select {
+    width: 100%; padding: 12px 14px; font-size: 1rem;
+    background: #141d38; color: var(--text);
+    border: 1px solid rgba(120,160,255,0.3); border-radius: 12px;
+    appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239fb3d1' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+  }
+  select:focus { outline: 2px solid var(--accent); }
+
+  button {
+    margin-top: 24px; width: 100%; padding: 15px;
+    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;
+    color: #06121f; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border: none; border-radius: 14px;
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(2px); }
+  button.secondary {
+    background: transparent; color: var(--accent);
+    border: 1px solid rgba(120,160,255,0.4);
+  }
+
+  /* ---------- In-game HUD ---------- */
+  #hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+  #question {
+    position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+    background: rgba(10, 16, 34, 0.9);
+    border: 1px solid rgba(120,160,255,0.35);
+    border-radius: 16px;
+    padding: 14px 26px;
+    max-width: min(92vw, 640px);
+    font-size: clamp(1.1rem, 3.4vw, 1.6rem);
+    text-align: center; line-height: 1.3;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  #qcounter { display:block; font-size: 0.7rem; color: var(--muted); letter-spacing: 2px; margin-bottom: 6px; text-transform: uppercase; }
+
+  #score {
+    position: absolute; top: 18px; right: 18px;
+    background: rgba(10, 16, 34, 0.9);
+    border: 1px solid rgba(120,160,255,0.35);
+    border-radius: 14px; padding: 10px 16px; text-align: right;
+  }
+  #score .label { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  #score .value { font-size: 1.6rem; font-weight: 800; color: var(--accent-2); }
+
+  #controls-hint {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    color: var(--muted); font-size: 0.8rem; text-align: center;
+    background: rgba(10,16,34,0.6); padding: 6px 14px; border-radius: 20px;
+  }
+
+  /* Gate option labels pinned over the 3D gates */
+  .gate-label {
+    position: absolute; transform: translate(-50%, -50%);
+    background: rgba(10, 16, 34, 0.82);
+    border: 2px solid rgba(120,160,255,0.5);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: clamp(0.9rem, 2.6vw, 1.3rem); font-weight: 700;
+    white-space: nowrap; color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+    will-change: left, top;
+  }
+
+  /* Correct / wrong feedback flashes */
+  #flash { position: fixed; inset: 0; z-index: 25; pointer-events: none; opacity: 0; transition: opacity 0.12s ease; }
+  #flash.good { background: radial-gradient(circle at center, rgba(67,233,123,0.0) 30%, rgba(67,233,123,0.45) 100%); }
+  #flash.bad  { background: radial-gradient(circle at center, rgba(255,83,112,0.0) 30%, rgba(255,83,112,0.5) 100%); }
+
+  #end-stats { display: flex; gap: 14px; margin: 18px 0 4px; }
+  .stat { flex: 1; background: #141d38; border-radius: 14px; padding: 16px 10px; }
+  .stat .n { font-size: 1.9rem; font-weight: 800; color: var(--accent); }
+  .stat .k { font-size: 0.7rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+  #grade-msg { margin-top: 10px; font-size: 1rem; color: var(--accent-2); font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<!-- ============ MAIN MENU ============ -->
+<div id="menu" class="screen">
+  <div class="card">
+    <h1>EduMath Runner</h1>
+    <p class="tagline">Dash through the gates. Pick the right answer. Ace 10 questions!</p>
+    <label for="grade-select">Select Grade</label>
+    <select id="grade-select"></select>
+    <label for="topic-select">Select Topic</label>
+    <select id="topic-select"></select>
+    <button id="start-btn">▶ Start Run</button>
+  </div>
+</div>
+
+<!-- ============ HUD (gameplay) ============ -->
+<div id="hud" class="hidden">
+  <div id="question"><span id="qcounter"></span><span id="qtext"></span></div>
+  <div id="score"><div class="label">Score</div><div class="value" id="score-value">0</div></div>
+  <div id="controls-hint">◀ ▶ / A · D / swipe to change lane</div>
+</div>
+
+<!-- Option labels float here, pinned to the 3D gates -->
+<div id="gate-labels"></div>
+
+<!-- feedback flash layer -->
+<div id="flash"></div>
+
+<!-- ============ END SCREEN ============ -->
+<div id="end" class="screen hidden">
+  <div class="card">
+    <h1 id="end-title">Run Complete!</h1>
+    <p class="tagline">Here is how you did</p>
+    <div id="end-stats">
+      <div class="stat"><div class="n" id="final-score">0</div><div class="k">Score</div></div>
+      <div class="stat"><div class="n" id="final-acc">0%</div><div class="k">Accuracy</div></div>
+      <div class="stat"><div class="n" id="final-correct">0/10</div><div class="k">Correct</div></div>
+    </div>
+    <div id="grade-msg"></div>
+    <button id="again-btn">↻ Play Again</button>
+    <button id="menu-btn" class="secondary">Change Topic</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   1. DYNAMIC CURRICULUM  (Grades 1 - 10)
+   Content is fully decoupled from game logic. Each topic holds
+   a pool of questions; a session draws 10 from the chosen pool.
+   Math uses LaTeX ($...$) rendered by KaTeX.
+   ============================================================ */
+const CURRICULUM = {
+  grade_1: {
+    label: "Grade 1",
+    topics: {
+      basic_operations: { label: "Basic Operations", questions: [
+        { q: "What is 12 + 7?", options: ["19", "18", "20"], correctIndex: 0 },
+        { q: "What is 9 + 6?", options: ["14", "15", "16"], correctIndex: 1 },
+        { q: "What is 10 - 4?", options: ["5", "7", "6"], correctIndex: 2 },
+        { q: "What is 5 + 5?", options: ["10", "11", "9"], correctIndex: 0 },
+        { q: "What is 8 - 3?", options: ["6", "5", "4"], correctIndex: 1 },
+        { q: "What is 7 + 2?", options: ["8", "10", "9"], correctIndex: 2 },
+        { q: "What is 15 - 5?", options: ["10", "11", "9"], correctIndex: 0 },
+        { q: "What is 3 + 4?", options: ["6", "7", "8"], correctIndex: 1 },
+        { q: "What is 6 + 6?", options: ["11", "13", "12"], correctIndex: 2 },
+        { q: "What is 14 - 6?", options: ["8", "7", "9"], correctIndex: 0 }
+      ]},
+      shapes: { label: "Shapes", questions: [
+        { q: "Which shape has 3 sides?", options: ["Square", "Triangle", "Circle"], correctIndex: 1 },
+        { q: "Which shape has 4 equal sides?", options: ["Square", "Triangle", "Oval"], correctIndex: 0 },
+        { q: "Which shape is perfectly round?", options: ["Rectangle", "Hexagon", "Circle"], correctIndex: 2 },
+        { q: "How many sides does a rectangle have?", options: ["4", "3", "5"], correctIndex: 0 },
+        { q: "Which shape has 0 corners?", options: ["Triangle", "Circle", "Square"], correctIndex: 1 },
+        { q: "How many corners does a triangle have?", options: ["4", "2", "3"], correctIndex: 2 },
+        { q: "A cube has how many faces?", options: ["6", "4", "8"], correctIndex: 0 },
+        { q: "Which shape has 5 sides?", options: ["Square", "Pentagon", "Circle"], correctIndex: 1 },
+        { q: "How many sides does a hexagon have?", options: ["5", "7", "6"], correctIndex: 2 },
+        { q: "Which is a flat shape?", options: ["Square", "Cube", "Sphere"], correctIndex: 0 }
+      ]},
+      counting: { label: "Counting & Numbers", questions: [
+        { q: "What comes after 19?", options: ["20", "18", "21"], correctIndex: 0 },
+        { q: "What comes before 10?", options: ["11", "9", "8"], correctIndex: 1 },
+        { q: "Which is the biggest?", options: ["7", "3", "9"], correctIndex: 2 },
+        { q: "Which is the smallest?", options: ["2", "5", "8"], correctIndex: 0 },
+        { q: "Count by 2s: 2, 4, 6, __", options: ["7", "8", "9"], correctIndex: 1 },
+        { q: "What number is ten more than 5?", options: ["25", "20", "15"], correctIndex: 2 },
+        { q: "How many tens in 30?", options: ["3", "30", "13"], correctIndex: 0 },
+        { q: "What comes between 6 and 8?", options: ["9", "7", "5"], correctIndex: 1 },
+        { q: "Count backwards: 5, 4, 3, __", options: ["1", "0", "2"], correctIndex: 2 },
+        { q: "Which is an even number?", options: ["8", "5", "3"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_2: {
+    label: "Grade 2",
+    topics: {
+      addition_subtraction: { label: "Addition & Subtraction", questions: [
+        { q: "What is 24 + 18?", options: ["42", "41", "43"], correctIndex: 0 },
+        { q: "What is 56 - 23?", options: ["32", "33", "34"], correctIndex: 1 },
+        { q: "What is 35 + 27?", options: ["61", "63", "62"], correctIndex: 2 },
+        { q: "What is 80 - 45?", options: ["35", "34", "36"], correctIndex: 0 },
+        { q: "What is 19 + 19?", options: ["37", "38", "39"], correctIndex: 1 },
+        { q: "What is 100 - 60?", options: ["30", "50", "40"], correctIndex: 2 },
+        { q: "What is 47 + 33?", options: ["80", "79", "81"], correctIndex: 0 },
+        { q: "What is 72 - 28?", options: ["45", "44", "46"], correctIndex: 1 },
+        { q: "What is 50 + 50?", options: ["90", "110", "100"], correctIndex: 2 },
+        { q: "What is 63 - 37?", options: ["26", "27", "25"], correctIndex: 0 }
+      ]},
+      time_money: { label: "Time & Money", questions: [
+        { q: "How many minutes in 1 hour?", options: ["60", "30", "100"], correctIndex: 0 },
+        { q: "How many days in a week?", options: ["5", "7", "10"], correctIndex: 1 },
+        { q: "How many cents in a dollar?", options: ["10", "50", "100"], correctIndex: 2 },
+        { q: "How many hours in a day?", options: ["24", "12", "60"], correctIndex: 0 },
+        { q: "Half past 3 is also written as?", options: ["3:15", "3:30", "3:45"], correctIndex: 1 },
+        { q: "2 quarters make how many cents?", options: ["25", "75", "50"], correctIndex: 2 },
+        { q: "How many months in a year?", options: ["12", "10", "6"], correctIndex: 0 },
+        { q: "How many minutes in half an hour?", options: ["15", "30", "45"], correctIndex: 1 },
+        { q: "How many seconds in a minute?", options: ["100", "30", "60"], correctIndex: 2 },
+        { q: "3 dimes equal how many cents?", options: ["30", "13", "20"], correctIndex: 0 }
+      ]},
+      patterns: { label: "Patterns", questions: [
+        { q: "Next: 5, 10, 15, __", options: ["20", "25", "16"], correctIndex: 0 },
+        { q: "Next: 2, 4, 8, 16, __", options: ["18", "32", "20"], correctIndex: 1 },
+        { q: "Next: 10, 20, 30, __", options: ["50", "35", "40"], correctIndex: 2 },
+        { q: "Next: 1, 3, 5, 7, __", options: ["9", "8", "10"], correctIndex: 0 },
+        { q: "Next: 100, 90, 80, __", options: ["75", "70", "60"], correctIndex: 1 },
+        { q: "Next: 3, 6, 9, __", options: ["13", "14", "12"], correctIndex: 2 },
+        { q: "Next: 2, 4, 6, 8, __", options: ["10", "9", "11"], correctIndex: 0 },
+        { q: "Next: 25, 20, 15, __", options: ["5", "10", "12"], correctIndex: 1 },
+        { q: "Next: 1, 2, 4, 7, 11, __", options: ["14", "15", "16"], correctIndex: 2 },
+        { q: "Next: 7, 14, 21, __", options: ["28", "27", "30"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_3: {
+    label: "Grade 3",
+    topics: {
+      multiplication: { label: "Multiplication", questions: [
+        { q: "What is 6 × 7?", options: ["42", "48", "36"], correctIndex: 0 },
+        { q: "What is 8 × 4?", options: ["28", "32", "36"], correctIndex: 1 },
+        { q: "What is 9 × 3?", options: ["24", "18", "27"], correctIndex: 2 },
+        { q: "What is 5 × 5?", options: ["25", "20", "30"], correctIndex: 0 },
+        { q: "What is 7 × 8?", options: ["54", "56", "64"], correctIndex: 1 },
+        { q: "What is 6 × 6?", options: ["42", "30", "36"], correctIndex: 2 },
+        { q: "What is 9 × 9?", options: ["81", "72", "99"], correctIndex: 0 },
+        { q: "What is 4 × 7?", options: ["21", "28", "32"], correctIndex: 1 },
+        { q: "What is 3 × 8?", options: ["21", "27", "24"], correctIndex: 2 },
+        { q: "What is 10 × 7?", options: ["70", "60", "17"], correctIndex: 0 }
+      ]},
+      division: { label: "Division", questions: [
+        { q: "What is 56 ÷ 8?", options: ["7", "6", "8"], correctIndex: 0 },
+        { q: "What is 42 ÷ 6?", options: ["6", "7", "8"], correctIndex: 1 },
+        { q: "What is 81 ÷ 9?", options: ["7", "8", "9"], correctIndex: 2 },
+        { q: "What is 36 ÷ 4?", options: ["9", "8", "6"], correctIndex: 0 },
+        { q: "What is 50 ÷ 5?", options: ["5", "10", "15"], correctIndex: 1 },
+        { q: "What is 24 ÷ 3?", options: ["6", "7", "8"], correctIndex: 2 },
+        { q: "What is 63 ÷ 7?", options: ["9", "8", "7"], correctIndex: 0 },
+        { q: "What is 45 ÷ 9?", options: ["4", "5", "6"], correctIndex: 1 },
+        { q: "What is 72 ÷ 8?", options: ["7", "8", "9"], correctIndex: 2 },
+        { q: "What is 100 ÷ 10?", options: ["10", "100", "1"], correctIndex: 0 }
+      ]},
+      fractions_intro: { label: "Intro to Fractions", questions: [
+        { q: "Which fraction is one half?", options: ["$\\frac{1}{2}$", "$\\frac{1}{4}$", "$\\frac{1}{3}$"], correctIndex: 0 },
+        { q: "Which is bigger?", options: ["$\\frac{1}{4}$", "$\\frac{1}{2}$", "$\\frac{1}{8}$"], correctIndex: 1 },
+        { q: "$\\frac{2}{4}$ is the same as?", options: ["$\\frac{1}{3}$", "$\\frac{1}{4}$", "$\\frac{1}{2}$"], correctIndex: 2 },
+        { q: "How many quarters make a whole?", options: ["4", "2", "3"], correctIndex: 0 },
+        { q: "Which fraction is one third?", options: ["$\\frac{1}{2}$", "$\\frac{1}{3}$", "$\\frac{1}{4}$"], correctIndex: 1 },
+        { q: "Which is the smallest?", options: ["$\\frac{1}{2}$", "$\\frac{1}{3}$", "$\\frac{1}{5}$"], correctIndex: 2 },
+        { q: "$\\frac{3}{3}$ equals?", options: ["1", "0", "3"], correctIndex: 0 },
+        { q: "Half of 8 is?", options: ["2", "4", "6"], correctIndex: 1 },
+        { q: "A quarter of 12 is?", options: ["4", "2", "3"], correctIndex: 2 },
+        { q: "Which shows two thirds?", options: ["$\\frac{1}{3}$", "$\\frac{3}{2}$", "$\\frac{2}{3}$"], correctIndex: 2 }
+      ]}
+    }
+  },
+
+  grade_4: {
+    label: "Grade 4",
+    topics: {
+      multiplication_division: { label: "Multiply & Divide", questions: [
+        { q: "What is 12 × 12?", options: ["144", "124", "154"], correctIndex: 0 },
+        { q: "What is 144 ÷ 12?", options: ["11", "12", "14"], correctIndex: 1 },
+        { q: "What is 15 × 6?", options: ["80", "95", "90"], correctIndex: 2 },
+        { q: "What is 96 ÷ 8?", options: ["12", "11", "13"], correctIndex: 0 },
+        { q: "What is 25 × 4?", options: ["90", "100", "110"], correctIndex: 1 },
+        { q: "What is 132 ÷ 11?", options: ["13", "11", "12"], correctIndex: 2 },
+        { q: "What is 13 × 7?", options: ["91", "81", "97"], correctIndex: 0 },
+        { q: "What is 108 ÷ 9?", options: ["11", "12", "13"], correctIndex: 1 },
+        { q: "What is 20 × 11?", options: ["210", "230", "220"], correctIndex: 2 },
+        { q: "What is 150 ÷ 5?", options: ["30", "25", "35"], correctIndex: 0 }
+      ]},
+      fractions: { label: "Fractions", questions: [
+        { q: "What is $\\frac{1}{4} + \\frac{1}{4}$?", options: ["$\\frac{1}{2}$", "$\\frac{2}{8}$", "$\\frac{1}{4}$"], correctIndex: 0 },
+        { q: "What is $\\frac{3}{5} + \\frac{1}{5}$?", options: ["$\\frac{4}{10}$", "$\\frac{4}{5}$", "$\\frac{3}{5}$"], correctIndex: 1 },
+        { q: "Simplify $\\frac{4}{8}$", options: ["$\\frac{1}{4}$", "$\\frac{2}{3}$", "$\\frac{1}{2}$"], correctIndex: 2 },
+        { q: "What is $\\frac{3}{4} - \\frac{1}{4}$?", options: ["$\\frac{1}{2}$", "$\\frac{2}{4}$", "$\\frac{1}{4}$"], correctIndex: 0 },
+        { q: "Which equals $\\frac{1}{2}$?", options: ["$\\frac{2}{5}$", "$\\frac{3}{6}$", "$\\frac{2}{3}$"], correctIndex: 1 },
+        { q: "What is $\\frac{2}{3}$ of 9?", options: ["3", "4", "6"], correctIndex: 2 },
+        { q: "Which is largest?", options: ["$\\frac{3}{4}$", "$\\frac{1}{2}$", "$\\frac{2}{5}$"], correctIndex: 0 },
+        { q: "What is $\\frac{5}{6} - \\frac{1}{6}$?", options: ["$\\frac{5}{6}$", "$\\frac{2}{3}$", "$\\frac{4}{6}$"], correctIndex: 1 },
+        { q: "$\\frac{6}{8}$ simplifies to?", options: ["$\\frac{2}{3}$", "$\\frac{1}{2}$", "$\\frac{3}{4}$"], correctIndex: 2 },
+        { q: "What is $\\frac{1}{3} + \\frac{1}{3}$?", options: ["$\\frac{2}{3}$", "$\\frac{1}{6}$", "$\\frac{2}{6}$"], correctIndex: 0 }
+      ]},
+      geometry: { label: "Geometry", questions: [
+        { q: "A right angle measures?", options: ["$90^\\circ$", "$45^\\circ$", "$180^\\circ$"], correctIndex: 0 },
+        { q: "How many degrees in a straight line?", options: ["90", "180", "360"], correctIndex: 1 },
+        { q: "A shape with 8 sides is a?", options: ["Hexagon", "Pentagon", "Octagon"], correctIndex: 2 },
+        { q: "Angle less than $90^\\circ$ is called?", options: ["Acute", "Obtuse", "Right"], correctIndex: 0 },
+        { q: "How many degrees in a full turn?", options: ["180", "360", "90"], correctIndex: 1 },
+        { q: "Lines that never meet are?", options: ["Perpendicular", "Intersecting", "Parallel"], correctIndex: 2 },
+        { q: "Angle more than $90^\\circ$ is?", options: ["Obtuse", "Acute", "Right"], correctIndex: 0 },
+        { q: "A triangle's angles add up to?", options: ["90", "180", "360"], correctIndex: 1 },
+        { q: "A 5-sided shape is a?", options: ["Hexagon", "Square", "Pentagon"], correctIndex: 2 },
+        { q: "How many vertices does a cube have?", options: ["8", "6", "12"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_5: {
+    label: "Grade 5",
+    topics: {
+      fractions_decimals: { label: "Fractions & Decimals", questions: [
+        { q: "What is the decimal form of $\\frac{1}{2}$?", options: ["$0.2$", "$0.5$", "$0.05$"], correctIndex: 1 },
+        { q: "What is $0.25$ as a fraction?", options: ["$\\frac{1}{4}$", "$\\frac{1}{2}$", "$\\frac{1}{5}$"], correctIndex: 0 },
+        { q: "What is $\\frac{3}{4}$ as a decimal?", options: ["$0.34$", "$0.75$", "$0.7$"], correctIndex: 1 },
+        { q: "What is $0.1 + 0.9$?", options: ["$1.0$", "$0.19$", "$0.91$"], correctIndex: 0 },
+        { q: "What is $\\frac{1}{5}$ as a decimal?", options: ["$0.15$", "$0.2$", "$0.5$"], correctIndex: 1 },
+        { q: "Which is larger?", options: ["$0.5$", "$0.45$", "$0.09$"], correctIndex: 0 },
+        { q: "What is $2.5 + 1.5$?", options: ["$3.5$", "$4.5$", "$4.0$"], correctIndex: 2 },
+        { q: "What is $\\frac{7}{10}$ as a decimal?", options: ["$7.0$", "$0.7$", "$0.07$"], correctIndex: 1 },
+        { q: "What is $0.75 - 0.25$?", options: ["$0.5$", "$0.25$", "$1.0$"], correctIndex: 0 },
+        { q: "What is $0.6$ as a fraction?", options: ["$\\frac{6}{100}$", "$\\frac{1}{6}$", "$\\frac{3}{5}$"], correctIndex: 2 }
+      ]},
+      percentages: { label: "Percentages", questions: [
+        { q: "What is $50\\%$ of 80?", options: ["40", "30", "45"], correctIndex: 0 },
+        { q: "What is $25\\%$ of 40?", options: ["5", "10", "15"], correctIndex: 1 },
+        { q: "What is $10\\%$ of 200?", options: ["10", "30", "20"], correctIndex: 2 },
+        { q: "$\\frac{1}{2}$ equals what percent?", options: ["$50\\%$", "$25\\%$", "$75\\%$"], correctIndex: 0 },
+        { q: "What is $100\\%$ of 65?", options: ["0", "65", "130"], correctIndex: 1 },
+        { q: "What is $20\\%$ of 50?", options: ["5", "15", "10"], correctIndex: 2 },
+        { q: "$0.75$ as a percent is?", options: ["$75\\%$", "$7.5\\%$", "$0.75\\%$"], correctIndex: 0 },
+        { q: "What is $75\\%$ of 100?", options: ["50", "75", "100"], correctIndex: 1 },
+        { q: "What is $5\\%$ of 100?", options: ["5", "50", "10"], correctIndex: 0 },
+        { q: "$\\frac{1}{4}$ equals what percent?", options: ["$50\\%$", "$20\\%$", "$25\\%$"], correctIndex: 2 }
+      ]},
+      area_perimeter: { label: "Area & Perimeter", questions: [
+        { q: "Area of a $5 \\times 4$ rectangle?", options: ["20", "18", "9"], correctIndex: 0 },
+        { q: "Perimeter of a square with side 6?", options: ["12", "24", "36"], correctIndex: 1 },
+        { q: "Area of a square with side 7?", options: ["28", "14", "49"], correctIndex: 2 },
+        { q: "Perimeter of a $3 \\times 5$ rectangle?", options: ["16", "15", "8"], correctIndex: 0 },
+        { q: "Area of a $10 \\times 10$ square?", options: ["40", "100", "20"], correctIndex: 1 },
+        { q: "Perimeter of a triangle with sides 3,4,5?", options: ["60", "11", "12"], correctIndex: 2 },
+        { q: "Area of a $6 \\times 2$ rectangle?", options: ["12", "16", "8"], correctIndex: 0 },
+        { q: "A square has area 36. Its side is?", options: ["9", "6", "12"], correctIndex: 1 },
+        { q: "Perimeter of a square with side 5?", options: ["25", "10", "20"], correctIndex: 2 },
+        { q: "Area of a $8 \\times 3$ rectangle?", options: ["24", "22", "11"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_6: {
+    label: "Grade 6",
+    topics: {
+      integers: { label: "Integers", questions: [
+        { q: "What is $-5 + 8$?", options: ["3", "-3", "13"], correctIndex: 0 },
+        { q: "What is $-4 - 6$?", options: ["2", "-10", "-2"], correctIndex: 1 },
+        { q: "What is $-3 \\times 4$?", options: ["12", "7", "-12"], correctIndex: 2 },
+        { q: "What is $-12 \\div 3$?", options: ["-4", "4", "-9"], correctIndex: 0 },
+        { q: "What is $7 + (-9)$?", options: ["16", "-2", "2"], correctIndex: 1 },
+        { q: "What is $-6 \\times -2$?", options: ["-12", "-8", "12"], correctIndex: 2 },
+        { q: "Which is greater?", options: ["$-2$", "$-9$", "$-15$"], correctIndex: 0 },
+        { q: "What is $0 - 7$?", options: ["7", "-7", "0"], correctIndex: 1 },
+        { q: "What is $-8 + (-3)$?", options: ["-5", "5", "-11"], correctIndex: 2 },
+        { q: "The opposite of $-10$ is?", options: ["10", "0", "-10"], correctIndex: 0 }
+      ]},
+      ratios: { label: "Ratios & Proportion", questions: [
+        { q: "Simplify the ratio $4:8$", options: ["$1:2$", "$2:1$", "$4:1$"], correctIndex: 0 },
+        { q: "If $2:3 = 4:x$, find $x$", options: ["5", "6", "8"], correctIndex: 1 },
+        { q: "Simplify $10:15$", options: ["$1:2$", "$3:2$", "$2:3$"], correctIndex: 2 },
+        { q: "The ratio of 5 to 10 is?", options: ["$1:2$", "$2:1$", "$5:1$"], correctIndex: 0 },
+        { q: "If $1:4 = 3:x$, find $x$", options: ["7", "12", "15"], correctIndex: 1 },
+        { q: "Simplify $9:12$", options: ["$2:3$", "$4:3$", "$3:4$"], correctIndex: 2 },
+        { q: "Divide 20 in ratio $1:3$. Larger part?", options: ["15", "5", "10"], correctIndex: 0 },
+        { q: "If $3:5 = 6:x$, find $x$", options: ["8", "10", "12"], correctIndex: 1 },
+        { q: "Simplify $6:8$", options: ["$2:3$", "$4:3$", "$3:4$"], correctIndex: 2 },
+        { q: "The ratio $2:4:6$ simplifies to?", options: ["$1:2:3$", "$2:3:4$", "$1:1:1$"], correctIndex: 0 }
+      ]},
+      algebra_basics: { label: "Algebra Basics", questions: [
+        { q: "If $x + 5 = 12$, then $x =$?", options: ["7", "6", "17"], correctIndex: 0 },
+        { q: "If $3x = 15$, then $x =$?", options: ["3", "5", "12"], correctIndex: 1 },
+        { q: "Simplify $2x + 3x$", options: ["$6x$", "$5x^2$", "$5x$"], correctIndex: 2 },
+        { q: "If $x - 4 = 10$, then $x =$?", options: ["14", "6", "40"], correctIndex: 0 },
+        { q: "If $\\frac{x}{2} = 6$, then $x =$?", options: ["3", "12", "8"], correctIndex: 1 },
+        { q: "Simplify $5y - 2y$", options: ["$7y$", "$10y$", "$3y$"], correctIndex: 2 },
+        { q: "If $2x + 1 = 9$, then $x =$?", options: ["4", "5", "8"], correctIndex: 0 },
+        { q: "Value of $3a$ when $a = 4$?", options: ["7", "12", "34"], correctIndex: 1 },
+        { q: "Simplify $4x + x$", options: ["$4x$", "$4x^2$", "$5x$"], correctIndex: 2 },
+        { q: "If $x + x = 10$, then $x =$?", options: ["5", "10", "2"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_7: {
+    label: "Grade 7",
+    topics: {
+      linear_equations: { label: "Linear Equations", questions: [
+        { q: "Solve $2x + 3 = 11$", options: ["$x=4$", "$x=5$", "$x=7$"], correctIndex: 0 },
+        { q: "Solve $5x - 2 = 18$", options: ["$x=3$", "$x=4$", "$x=5$"], correctIndex: 1 },
+        { q: "Solve $3x = 21$", options: ["$x=6$", "$x=8$", "$x=7$"], correctIndex: 2 },
+        { q: "Solve $x/4 = 5$", options: ["$x=20$", "$x=9$", "$x=1$"], correctIndex: 0 },
+        { q: "Solve $4x + 4 = 20$", options: ["$x=3$", "$x=4$", "$x=5$"], correctIndex: 1 },
+        { q: "Solve $2(x+1) = 10$", options: ["$x=5$", "$x=6$", "$x=4$"], correctIndex: 2 },
+        { q: "Solve $7x = 49$", options: ["$x=7$", "$x=6$", "$x=8$"], correctIndex: 0 },
+        { q: "Solve $x - 9 = 3$", options: ["$x=6$", "$x=12$", "$x=27$"], correctIndex: 1 },
+        { q: "Solve $6x + 1 = 13$", options: ["$x=3$", "$x=1$", "$x=2$"], correctIndex: 2 },
+        { q: "Solve $10 - x = 4$", options: ["$x=6$", "$x=14$", "$x=4$"], correctIndex: 0 }
+      ]},
+      geometry: { label: "Geometry & Angles", questions: [
+        { q: "Angles on a straight line sum to?", options: ["$180^\\circ$", "$90^\\circ$", "$360^\\circ$"], correctIndex: 0 },
+        { q: "Complement of $30^\\circ$?", options: ["$150^\\circ$", "$60^\\circ$", "$70^\\circ$"], correctIndex: 1 },
+        { q: "Supplement of $110^\\circ$?", options: ["$90^\\circ$", "$80^\\circ$", "$70^\\circ$"], correctIndex: 2 },
+        { q: "Angles in a triangle sum to?", options: ["$180^\\circ$", "$360^\\circ$", "$90^\\circ$"], correctIndex: 0 },
+        { q: "Each angle in an equilateral triangle?", options: ["$90^\\circ$", "$60^\\circ$", "$45^\\circ$"], correctIndex: 1 },
+        { q: "Angles around a point sum to?", options: ["$180^\\circ$", "$90^\\circ$", "$360^\\circ$"], correctIndex: 2 },
+        { q: "Vertically opposite angles are?", options: ["Equal", "Supplementary", "Complementary"], correctIndex: 0 },
+        { q: "Complement of $45^\\circ$?", options: ["$135^\\circ$", "$45^\\circ$", "$90^\\circ$"], correctIndex: 1 },
+        { q: "Angles in a quadrilateral sum to?", options: ["$180^\\circ$", "$270^\\circ$", "$360^\\circ$"], correctIndex: 2 },
+        { q: "An exterior angle of a triangle equals?", options: ["Sum of 2 opposite interior angles", "90 degrees", "The third angle"], correctIndex: 0 }
+      ]},
+      data_handling: { label: "Data Handling", questions: [
+        { q: "Mean of 2, 4, 6?", options: ["4", "3", "6"], correctIndex: 0 },
+        { q: "Median of 1, 3, 5, 7, 9?", options: ["3", "5", "7"], correctIndex: 1 },
+        { q: "Mode of 2, 2, 3, 4?", options: ["3", "4", "2"], correctIndex: 2 },
+        { q: "Range of 10, 4, 7?", options: ["6", "7", "10"], correctIndex: 0 },
+        { q: "Mean of 10, 20, 30?", options: ["15", "20", "25"], correctIndex: 1 },
+        { q: "Median of 4, 8, 6, 2 (sorted)?", options: ["4", "6", "5"], correctIndex: 2 },
+        { q: "Mode of 5, 5, 5, 9?", options: ["5", "9", "7"], correctIndex: 0 },
+        { q: "Range of 3, 3, 3?", options: ["3", "0", "9"], correctIndex: 1 },
+        { q: "Mean of 0, 5, 10, 5?", options: ["4", "6", "5"], correctIndex: 2 },
+        { q: "Probability of heads on a fair coin?", options: ["$\\frac{1}{2}$", "1", "0"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_8: {
+    label: "Grade 8",
+    topics: {
+      algebraic_identities: { label: "Algebraic Identities", questions: [
+        { q: "What is the expansion of $(a+b)^2$?", options: ["$a^2 - 2ab + b^2$", "$a^2 + b^2$", "$a^2 + 2ab + b^2$"], correctIndex: 2 },
+        { q: "What is $(a-b)^2$?", options: ["$a^2 - 2ab + b^2$", "$a^2 + 2ab + b^2$", "$a^2 - b^2$"], correctIndex: 0 },
+        { q: "What is $(a+b)(a-b)$?", options: ["$a^2 + b^2$", "$a^2 - b^2$", "$a^2 - 2ab$"], correctIndex: 1 },
+        { q: "Factor $x^2 - 9$", options: ["$(x-3)(x+3)$", "$(x-3)^2$", "$(x+3)^2$"], correctIndex: 0 },
+        { q: "Expand $(x+2)^2$", options: ["$x^2 + 4$", "$x^2 + 4x + 4$", "$x^2 + 2x + 4$"], correctIndex: 1 },
+        { q: "Factor $x^2 + 6x + 9$", options: ["$(x+2)^2$", "$(x+9)$", "$(x+3)^2$"], correctIndex: 2 },
+        { q: "What is $(2x)^2$?", options: ["$4x^2$", "$2x^2$", "$4x$"], correctIndex: 0 },
+        { q: "Expand $(x-5)(x+5)$", options: ["$x^2 + 25$", "$x^2 - 25$", "$x^2 - 10x$"], correctIndex: 1 },
+        { q: "Simplify $x^2 \\cdot x^3$", options: ["$x^6$", "$x^5$ (wrong label)", "$x^5$"], correctIndex: 2 },
+        { q: "Factor $2x + 4$", options: ["$2(x+2)$", "$2(x+4)$", "$x(2+4)$"], correctIndex: 0 }
+      ]},
+      commercial_math: { label: "Commercial Math", questions: [
+        { q: "Formula for Compound Interest Amount?", options: ["$P\\left(1 + \\frac{R}{100}\\right)^n$", "$\\frac{P \\times R \\times T}{100}$", "$P\\left(1 - \\frac{R}{100}\\right)^n$"], correctIndex: 0 },
+        { q: "Simple Interest formula?", options: ["$P + R + T$", "$\\frac{P \\times R \\times T}{100}$", "$PRT$"], correctIndex: 1 },
+        { q: "If CP = 100, SP = 120, profit % is?", options: ["$10\\%$", "$25\\%$", "$20\\%$"], correctIndex: 2 },
+        { q: "SI on 1000 at $10\\%$ for 2 yrs?", options: ["200", "100", "300"], correctIndex: 0 },
+        { q: "Loss occurs when?", options: ["SP > CP", "SP < CP", "SP = CP"], correctIndex: 1 },
+        { q: "$20\\%$ discount on 500 =?", options: ["50", "150", "100"], correctIndex: 2 },
+        { q: "If CP=200, SP=150, loss % is?", options: ["$25\\%$", "$20\\%$", "$50\\%$"], correctIndex: 0 },
+        { q: "Profit = ?", options: ["CP - SP", "SP - CP", "SP + CP"], correctIndex: 1 },
+        { q: "SI on 500 at $5\\%$ for 1 yr?", options: ["50", "5", "25"], correctIndex: 2 },
+        { q: "Marked price minus discount =?", options: ["Selling price", "Cost price", "Profit"], correctIndex: 0 }
+      ]},
+      mensuration: { label: "Mensuration", questions: [
+        { q: "Area of a circle?", options: ["$\\pi r^2$", "$2\\pi r$", "$\\pi d$"], correctIndex: 0 },
+        { q: "Circumference of a circle?", options: ["$\\pi r^2$", "$2\\pi r$", "$r^2$"], correctIndex: 1 },
+        { q: "Volume of a cube with side $a$?", options: ["$6a^2$", "$a^2$", "$a^3$"], correctIndex: 2 },
+        { q: "Area of a triangle?", options: ["$\\frac{1}{2}bh$", "$bh$", "$b+h$"], correctIndex: 0 },
+        { q: "Volume of a cuboid?", options: ["$l + b + h$", "$l \\times b \\times h$", "$2lbh$"], correctIndex: 1 },
+        { q: "Surface area of a cube side $a$?", options: ["$a^3$", "$a^2$", "$6a^2$"], correctIndex: 2 },
+        { q: "Area of a parallelogram?", options: ["$base \\times height$", "$\\frac{1}{2}bh$", "$b + h$"], correctIndex: 0 },
+        { q: "Volume of a cylinder?", options: ["$2\\pi r h$", "$\\pi r^2 h$", "$\\pi r h$"], correctIndex: 1 },
+        { q: "Area of a trapezium?", options: ["$\\frac{1}{2}bh$", "$lb$", "$\\frac{1}{2}(a+b)h$"], correctIndex: 2 },
+        { q: "If a square has area $25$, side =?", options: ["5", "25", "10"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_9: {
+    label: "Grade 9",
+    topics: {
+      polynomials: { label: "Polynomials", questions: [
+        { q: "Degree of $3x^4 + 2x + 1$?", options: ["4", "3", "1"], correctIndex: 0 },
+        { q: "Factor $x^2 - 5x + 6$", options: ["$(x-1)(x-6)$", "$(x-2)(x-3)$", "$(x+2)(x+3)$"], correctIndex: 1 },
+        { q: "Value of $x^2 + 1$ at $x = 2$?", options: ["3", "4", "5"], correctIndex: 2 },
+        { q: "A polynomial of degree 2 is called?", options: ["Quadratic", "Linear", "Cubic"], correctIndex: 0 },
+        { q: "Factor $x^2 - 4$", options: ["$(x-4)(x+1)$", "$(x-2)(x+2)$", "$(x-2)^2$"], correctIndex: 1 },
+        { q: "Number of zeros of a quadratic (max)?", options: ["1", "3", "2"], correctIndex: 2 },
+        { q: "A degree-1 polynomial is?", options: ["Linear", "Quadratic", "Constant"], correctIndex: 0 },
+        { q: "Factor $x^2 + 7x + 12$", options: ["$(x+2)(x+6)$", "$(x+3)(x+4)$", "$(x+1)(x+12)$"], correctIndex: 1 },
+        { q: "Sum of zeros of $x^2 - 5x + 6$?", options: ["6", "-5", "5"], correctIndex: 2 },
+        { q: "Product of zeros of $x^2 - 5x + 6$?", options: ["6", "5", "-6"], correctIndex: 0 }
+      ]},
+      coordinate_geometry: { label: "Coordinate Geometry", questions: [
+        { q: "Point $(0,0)$ is called the?", options: ["Origin", "Abscissa", "Ordinate"], correctIndex: 0 },
+        { q: "Distance from origin to $(3,4)$?", options: ["7", "5", "12"], correctIndex: 1 },
+        { q: "Point $(2,-3)$ lies in quadrant?", options: ["I", "II", "IV"], correctIndex: 2 },
+        { q: "The x-coordinate is called the?", options: ["Abscissa", "Ordinate", "Origin"], correctIndex: 0 },
+        { q: "Midpoint of $(0,0)$ and $(4,6)$?", options: ["$(4,6)$", "$(2,3)$", "$(1,2)$"], correctIndex: 1 },
+        { q: "Point $(-2,-5)$ is in quadrant?", options: ["I", "IV", "III"], correctIndex: 2 },
+        { q: "The y-coordinate is the?", options: ["Ordinate", "Abscissa", "Slope"], correctIndex: 0 },
+        { q: "Point on the x-axis has y =?", options: ["1", "0", "x"], correctIndex: 1 },
+        { q: "Point $(-3, 5)$ is in quadrant?", options: ["I", "III", "II"], correctIndex: 2 },
+        { q: "Distance between $(0,0)$ and $(0,5)$?", options: ["5", "0", "25"], correctIndex: 0 }
+      ]},
+      number_systems: { label: "Number Systems", questions: [
+        { q: "$\\sqrt{2}$ is a?", options: ["Irrational number", "Rational number", "Integer"], correctIndex: 0 },
+        { q: "$\\frac{3}{4}$ is a?", options: ["Irrational number", "Rational number", "Natural number"], correctIndex: 1 },
+        { q: "Is $0$ a natural number?", options: ["Yes", "Always", "No"], correctIndex: 2 },
+        { q: "$\\sqrt{16}$ equals?", options: ["4", "8", "2"], correctIndex: 0 },
+        { q: "$\\pi$ is a?", options: ["Rational number", "Irrational number", "Integer"], correctIndex: 1 },
+        { q: "Which is irrational?", options: ["$0.5$", "$\\frac{1}{3}$", "$\\sqrt{3}$"], correctIndex: 2 },
+        { q: "$2^3$ equals?", options: ["8", "6", "9"], correctIndex: 0 },
+        { q: "$\\frac{22}{7}$ is a?", options: ["Irrational number", "Rational number", "Integer"], correctIndex: 1 },
+        { q: "$\\sqrt{25}$ equals?", options: ["4", "6", "5"], correctIndex: 2 },
+        { q: "Smallest prime number?", options: ["2", "1", "3"], correctIndex: 0 }
+      ]}
+    }
+  },
+
+  grade_10: {
+    label: "Grade 10",
+    topics: {
+      quadratic_equations: { label: "Quadratic Equations", questions: [
+        { q: "What is the Quadratic Formula?", options: ["$x = \\frac{b \\pm \\sqrt{b^2 - 4ac}}{2a}$", "$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$", "$x = \\frac{-b \\pm \\sqrt{b^2 + 4ac}}{2a}$"], correctIndex: 1 },
+        { q: "The discriminant is?", options: ["$b^2 - 4ac$", "$b^2 + 4ac$", "$\\sqrt{b^2-4ac}$"], correctIndex: 0 },
+        { q: "Roots of $x^2 - 5x + 6 = 0$?", options: ["1, 6", "2, 3", "-2, -3"], correctIndex: 1 },
+        { q: "If discriminant $> 0$, roots are?", options: ["Real & distinct", "Equal", "Imaginary"], correctIndex: 0 },
+        { q: "Roots of $x^2 - 4 = 0$?", options: ["0, 4", "$\\pm 2$", "$\\pm 4$"], correctIndex: 1 },
+        { q: "If discriminant $= 0$, roots are?", options: ["Distinct", "Imaginary", "Real & equal"], correctIndex: 2 },
+        { q: "Sum of roots of $ax^2+bx+c=0$?", options: ["$-\\frac{b}{a}$", "$\\frac{b}{a}$", "$\\frac{c}{a}$"], correctIndex: 0 },
+        { q: "Product of roots of $ax^2+bx+c=0$?", options: ["$-\\frac{c}{a}$", "$\\frac{c}{a}$", "$\\frac{b}{a}$"], correctIndex: 1 },
+        { q: "A quadratic equation has degree?", options: ["1", "3", "2"], correctIndex: 2 },
+        { q: "Roots of $x^2 - 9 = 0$?", options: ["$\\pm 3$", "3", "9"], correctIndex: 0 }
+      ]},
+      trigonometry: { label: "Trigonometry", questions: [
+        { q: "What does $\\sin^2 \\theta + \\cos^2 \\theta$ equal?", options: ["$0$", "$1$", "$-1$"], correctIndex: 1 },
+        { q: "$\\sin 30^\\circ$ equals?", options: ["$\\frac{1}{2}$", "$\\frac{\\sqrt{3}}{2}$", "$1$"], correctIndex: 0 },
+        { q: "$\\cos 0^\\circ$ equals?", options: ["$0$", "$\\frac{1}{2}$", "$1$"], correctIndex: 2 },
+        { q: "$\\tan 45^\\circ$ equals?", options: ["$1$", "$0$", "$\\sqrt{3}$"], correctIndex: 0 },
+        { q: "$\\sin 90^\\circ$ equals?", options: ["$0$", "$1$", "$\\frac{1}{2}$"], correctIndex: 1 },
+        { q: "$\\cos 60^\\circ$ equals?", options: ["$\\frac{\\sqrt3}{2}$", "$1$", "$\\frac{1}{2}$"], correctIndex: 2 },
+        { q: "$\\tan \\theta = \\frac{\\sin\\theta}{?}$", options: ["$\\cos\\theta$", "$\\sin\\theta$", "$1$"], correctIndex: 0 },
+        { q: "$\\sin 0^\\circ$ equals?", options: ["$1$", "$0$", "$\\frac{1}{2}$"], correctIndex: 1 },
+        { q: "$\\cos 90^\\circ$ equals?", options: ["$1$", "$\\frac{1}{2}$", "$0$"], correctIndex: 2 },
+        { q: "$1 + \\tan^2\\theta$ equals?", options: ["$\\sec^2\\theta$", "$\\csc^2\\theta$", "$1$"], correctIndex: 0 }
+      ]},
+      arithmetic_progressions: { label: "Arithmetic Progressions", questions: [
+        { q: "$n$th term of an AP?", options: ["$a + (n-1)d$", "$a + nd$", "$an + d$"], correctIndex: 0 },
+        { q: "Common difference of 2, 5, 8, 11?", options: ["2", "3", "5"], correctIndex: 1 },
+        { q: "Sum of first $n$ terms formula?", options: ["$nd$", "$a+nd$", "$\\frac{n}{2}[2a+(n-1)d]$"], correctIndex: 2 },
+        { q: "10th term of 3, 6, 9, ...?", options: ["30", "27", "33"], correctIndex: 0 },
+        { q: "Next term: 7, 10, 13, __", options: ["15", "16", "17"], correctIndex: 1 },
+        { q: "Common difference of 20, 15, 10?", options: ["5", "10", "-5"], correctIndex: 2 },
+        { q: "First term of 4, 7, 10 is?", options: ["4", "3", "7"], correctIndex: 0 },
+        { q: "5th term of 1, 3, 5, 7, ...?", options: ["11", "9", "13"], correctIndex: 1 },
+        { q: "Sum of 1+2+3+...+10?", options: ["45", "50", "55"], correctIndex: 2 },
+        { q: "Is 2, 4, 8, 16 an AP?", options: ["No", "Yes", "Sometimes"], correctIndex: 0 }
+      ]}
+    }
+  }
+};
+
+/* ============================================================
+   2. SMALL HELPERS — math rendering, shuffle, audio
+   ============================================================ */
+
+// Render a string that may mix plain text and $...$ LaTeX into an element.
+function renderMath(el, str) {
+  el.innerHTML = "";
+  const parts = String(str).split(/(\$[^$]*\$)/g);
+  parts.forEach(p => {
+    if (p.length >= 2 && p.startsWith("$") && p.endsWith("$")) {
+      const span = document.createElement("span");
+      try {
+        if (window.katex) katex.render(p.slice(1, -1), span, { throwOnError: false });
+        else span.textContent = p.slice(1, -1);
+      } catch (e) { span.textContent = p; }
+      el.appendChild(span);
+    } else if (p) {
+      el.appendChild(document.createTextNode(p));
+    }
+  });
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Shuffle a question's options and re-point correctIndex so the correct
+// lane (Left/Center/Right) is randomized every spawn.
+function randomizeOptions(question) {
+  const idx = shuffle([0, 1, 2]);                  // new order of original option indices
+  const options = idx.map(i => question.options[i]);
+  const correctIndex = idx.indexOf(question.correctIndex);
+  return { q: question.q, options, correctIndex };
+}
+
+// Lightweight WebAudio sound effects (no external files).
+const Sound = (() => {
+  let ctx = null;
+  function ac() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); return ctx; }
+  function tone(freq, dur, type = "sine", gain = 0.18) {
+    try {
+      const c = ac();
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(gain, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(); o.stop(c.currentTime + dur);
+    } catch (e) {}
+  }
+  return {
+    correct() { tone(660, 0.12, "sine"); setTimeout(() => tone(990, 0.18, "sine"), 90); },
+    wrong()   { tone(180, 0.28, "sawtooth", 0.22); },
+    resume()  { try { ac().resume(); } catch (e) {} }
+  };
+})();
+
+/* ============================================================
+   3. SESSION MANAGER — draws exactly 10 questions
+   ============================================================ */
+class SessionManager {
+  constructor(grade, topic) {
+    this.grade = grade;
+    this.topic = topic;
+    this.total = 10;
+    this.reset();
+  }
+  reset() {
+    const pool = CURRICULUM[this.grade].topics[this.topic].questions;
+    let picks = shuffle(pool);
+    // Fill to exactly 10 by cycling the pool if it has fewer than 10.
+    while (picks.length < this.total) picks = picks.concat(shuffle(pool));
+    this.questions = picks.slice(0, this.total);
+    this.index = 0;
+    this.score = 0;
+    this.correctCount = 0;
+  }
+  current() { return randomizeOptions(this.questions[this.index]); }
+  hasMore() { return this.index < this.total; }
+  record(isCorrect) {
+    if (isCorrect) { this.score += 100; this.correctCount++; }
+    else { this.score -= 50; }
+    this.index++;
+  }
+  accuracy() { return Math.round((this.correctCount / this.total) * 100); }
+}
+
+/* ============================================================
+   4. THREE.JS GAME ENGINE
+   ============================================================ */
+const Game = (() => {
+  // Lane x-positions by index [0,1,2] = screen Left, Center, Right.
+  // The camera looks down +Z, which mirrors the X-axis on screen, so the
+  // screen-left lane is at world x = +5. Gates, labels and the player all
+  // use these same indices, so the mapping stays consistent.
+  const LANES = [5, 0, -5];
+  const PLAYER_Z = 0;                  // player stays at z=0; world moves toward it
+  const SPAWN_Z = 120;                 // gates spawn far ahead
+  const SPEED = 15;                    // world units per second (slower: 8s to read and pick a gate)
+  const LANE_LERP = 10;                // lane-switch smoothing
+
+  let renderer, scene, camera;
+  let player, playerLane = 1, targetX = 0;
+  let floor, props = [];
+  let gateGroup = null;                // { mesh, boxes[], labels[], data, evaluated }
+  let session = null;
+  let state = "menu";                  // menu | play | end
+  let clock = null;
+  let activeQuestion = null;
+
+  // DOM refs
+  const hud = document.getElementById("hud");
+  const qText = document.getElementById("qtext");
+  const qCounter = document.getElementById("qcounter");
+  const scoreValue = document.getElementById("score-value");
+  const gateLabels = document.getElementById("gate-labels");
+  const flash = document.getElementById("flash");
+
+  function initThree() {
+    const container = document.getElementById("game");
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87b4e8);                 // sky blue
+    scene.fog = new THREE.Fog(0x87b4e8, 60, 135);                // depth fade
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400);
+    camera.position.set(0, 7.5, -13);
+    camera.lookAt(0, 3, 25);
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    sun.position.set(-20, 40, -10);
+    scene.add(sun);
+
+    buildFloor();
+    buildProps();
+    buildPlayer();
+
+    window.addEventListener("resize", onResize);
+  }
+
+  // Scrolling road built from a repeating canvas texture.
+  function buildFloor() {
+    const c = document.createElement("canvas");
+    c.width = 256; c.height = 256;
+    const g = c.getContext("2d");
+    g.fillStyle = "#4a4f63"; g.fillRect(0, 0, 256, 256);          // asphalt
+    g.fillStyle = "#5a607a";
+    g.fillRect(0, 0, 8, 256); g.fillRect(248, 0, 8, 256);
+    // lane divider dashes (two inner lines for 3 lanes)
+    g.fillStyle = "#f4d03f";
+    [85, 171].forEach(x => { for (let y = 0; y < 256; y += 64) g.fillRect(x - 3, y, 6, 36); });
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(1, 30);
+
+    const geo = new THREE.PlaneGeometry(20, 600);
+    const mat = new THREE.MeshStandardMaterial({ map: tex });
+    floor = new THREE.Mesh(geo, mat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.z = 250;
+    floor.userData.tex = tex;
+    scene.add(floor);
+
+    // grass verges
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x3f8f52 });
+    [-25, 25].forEach(x => {
+      const gm = new THREE.Mesh(new THREE.PlaneGeometry(30, 600), grassMat);
+      gm.rotation.x = -Math.PI / 2; gm.position.set(x, -0.05, 250);
+      scene.add(gm);
+    });
+  }
+
+  // Recycling side props (simple trees) to sell forward motion.
+  function buildProps() {
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x7a5230 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32 });
+    for (let i = 0; i < 20; i++) {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 3, 6), trunkMat);
+      trunk.position.y = 1.5;
+      const leaves = new THREE.Mesh(new THREE.ConeGeometry(2.2, 5, 7), leafMat);
+      leaves.position.y = 5;
+      tree.add(trunk); tree.add(leaves);
+      const side = i % 2 === 0 ? -1 : 1;
+      tree.position.set(side * (11 + Math.random() * 6), 0, (i / 2) * 24 + Math.random() * 10);
+      scene.add(tree);
+      props.push(tree);
+    }
+  }
+
+  function buildPlayer() {
+    player = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3f51d5 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1a });
+    const bagMat  = new THREE.MeshStandardMaterial({ color: 0xff7043 });
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2, 1), bodyMat);
+    torso.position.y = 2.4;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), skinMat);
+    head.position.y = 4;
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.7), hairMat);
+    hair.position.y = 4.15;
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.5), bagMat);
+    bag.position.set(0, 2.5, -0.7);
+
+    // legs (animated)
+    const legGeo = new THREE.BoxGeometry(0.55, 1.6, 0.55);
+    const legL = new THREE.Mesh(legGeo, bodyMat); legL.position.set(-0.42, 0.8, 0);
+    const legR = new THREE.Mesh(legGeo, bodyMat); legR.position.set(0.42, 0.8, 0);
+
+    player.add(torso, head, hair, bag, legL, legR);
+    player.userData.legs = [legL, legR];
+    player.position.set(0, 0, PLAYER_Z);
+    scene.add(player);
+  }
+
+  function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  /* ---------- Gate spawning ---------- */
+  function spawnGates(q) {
+    clearGates();
+    activeQuestion = q;
+
+    const group = { boxes: [], labels: [], data: q, evaluated: false, z: SPAWN_Z, root: new THREE.Group() };
+    const colors = [0x5c9dff, 0x5c9dff, 0x5c9dff];
+
+    for (let i = 0; i < 3; i++) {
+      const mat = new THREE.MeshStandardMaterial({
+        color: colors[i], transparent: true, opacity: 0.32,
+        side: THREE.DoubleSide, emissive: 0x18407a, emissiveIntensity: 0.4
+      });
+      const box = new THREE.Mesh(new THREE.BoxGeometry(4.4, 6, 0.5), mat);
+      box.position.set(LANES[i], 3, 0);
+
+      // glowing frame
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(4.6, 6.2, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide })
+      );
+      box.add(frame);
+
+      group.root.add(box);
+      group.boxes.push(box);
+
+      // HTML label pinned to this gate
+      const label = document.createElement("div");
+      label.className = "gate-label";
+      renderMath(label, q.options[i]);
+      gateLabels.appendChild(label);
+      group.labels.push(label);
+    }
+    group.root.position.z = SPAWN_Z;
+    scene.add(group.root);
+    gateGroup = group;
+  }
+
+  function clearGates() {
+    if (!gateGroup) return;
+    scene.remove(gateGroup.root);
+    gateGroup.boxes.forEach(b => { b.geometry.dispose(); b.material.dispose(); });
+    gateGroup.labels.forEach(l => l.remove());
+    gateGroup = null;
+  }
+
+  // Project a world position to 2D screen pixels.
+  const _v = new THREE.Vector3();
+  function projectToScreen(x, y, z) {
+    _v.set(x, y, z).project(camera);
+    return {
+      x: (_v.x * 0.5 + 0.5) * window.innerWidth,
+      y: (0.5 - _v.y * 0.5) * window.innerHeight,
+      visible: _v.z < 1
+    };
+  }
+
+  function updateGateLabels() {
+    if (!gateGroup) return;
+    const z = gateGroup.root.position.z;
+    for (let i = 0; i < 3; i++) {
+      const p = projectToScreen(LANES[i], 6.6, z);
+      const lbl = gateGroup.labels[i];
+      if (p.visible && z > PLAYER_Z - 4) {
+        lbl.style.display = "block";
+        lbl.style.left = p.x + "px";
+        lbl.style.top = p.y + "px";
+        const scale = Math.max(0.5, Math.min(1.25, 60 / (z - PLAYER_Z + 12)));
+        lbl.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      } else {
+        lbl.style.display = "none";
+      }
+    }
+  }
+
+  function doFlash(kind) {
+    flash.className = kind;
+    flash.style.opacity = "1";
+    setTimeout(() => { flash.style.opacity = "0"; }, 180);
+  }
+
+  let shake = 0;
+  function evaluateGate() {
+    const q = gateGroup.data;
+    const chosen = playerLane;                       // lane the player is in
+    const correct = chosen === q.correctIndex;
+
+    // visual: highlight gates
+    gateGroup.boxes.forEach((b, i) => {
+      if (i === q.correctIndex) { b.material.color.setHex(0x2ecc71); b.material.emissive.setHex(0x1b7a43); }
+      else if (i === chosen) { b.material.color.setHex(0xff5370); b.material.emissive.setHex(0x7a1b2b); }
+    });
+
+    if (correct) { Sound.correct(); doFlash("good"); }
+    else { Sound.wrong(); doFlash("bad"); shake = 0.5; }
+
+    session.record(correct);
+    scoreValue.textContent = session.score;
+    gateGroup.evaluated = true;
+
+    // brief pause so the player sees the result, then next question / end
+    setTimeout(() => {
+      if (session.hasMore()) {
+        loadNextQuestion();
+      } else {
+        endGame();
+      }
+    }, 450);
+  }
+
+  function loadNextQuestion() {
+    const q = session.current();
+    qCounter.textContent = `Question ${session.index + 1} / ${session.total}`;
+    renderMath(qText, q.q);
+    spawnGates(q);
+  }
+
+  /* ---------- Main loop ---------- */
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock ? clock.getDelta() : 0.016, 0.05);
+
+    if (state === "play") {
+      // scroll road + recycle props for forward-motion feel
+      floor.userData.tex.offset.y -= (SPEED / 600) * dt * 30;
+      props.forEach(tr => {
+        tr.position.z -= SPEED * dt;
+        if (tr.position.z < -20) tr.position.z += 240;
+      });
+
+      // player lane lerp + running bob + leg swing
+      targetX = LANES[playerLane];
+      player.position.x += (targetX - player.position.x) * Math.min(1, LANE_LERP * dt);
+      const t = performance.now() * 0.012;
+      player.position.y = Math.abs(Math.sin(t)) * 0.25;
+      player.userData.legs[0].rotation.x = Math.sin(t) * 0.6;
+      player.userData.legs[1].rotation.x = -Math.sin(t) * 0.6;
+
+      // advance gates toward the player
+      if (gateGroup && !gateGroup.evaluated) {
+        gateGroup.root.position.z -= SPEED * dt;
+        if (gateGroup.root.position.z <= PLAYER_Z) {
+          gateGroup.root.position.z = PLAYER_Z;
+          evaluateGate();
+        }
+        updateGateLabels();
+      } else if (gateGroup) {
+        updateGateLabels();
+      }
+    }
+
+    // camera shake on wrong answer
+    if (shake > 0) {
+      camera.position.x = (Math.random() - 0.5) * shake;
+      camera.position.y = 7.5 + (Math.random() - 0.5) * shake;
+      shake -= dt * 2;
+      if (shake <= 0) { camera.position.x = 0; camera.position.y = 7.5; }
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  /* ---------- Input ---------- */
+  function moveLane(dir) {
+    if (state !== "play") return;
+    playerLane = Math.max(0, Math.min(2, playerLane + dir));
+  }
+  function bindInput() {
+    window.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") moveLane(-1);
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") moveLane(1);
+    });
+    // touch swipe
+    let sx = 0, sy = 0;
+    window.addEventListener("touchstart", e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    window.addEventListener("touchend", e => {
+      const dx = e.changedTouches[0].clientX - sx;
+      const dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) moveLane(dx > 0 ? 1 : -1);
+    }, { passive: true });
+  }
+
+  /* ---------- State transitions ---------- */
+  function startGame(grade, topic) {
+    Sound.resume();
+    session = new SessionManager(grade, topic);
+    playerLane = 1; player.position.x = 0;
+    scoreValue.textContent = "0";
+    state = "play";
+    clock = new THREE.Clock();
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("end").classList.add("hidden");
+    hud.classList.remove("hidden");
+    loadNextQuestion();
+  }
+
+  function endGame() {
+    state = "end";
+    clearGates();
+    hud.classList.add("hidden");
+    document.getElementById("final-score").textContent = session.score;
+    document.getElementById("final-acc").textContent = session.accuracy() + "%";
+    document.getElementById("final-correct").textContent = session.correctCount + "/" + session.total;
+    const acc = session.accuracy();
+    const msg = acc >= 90 ? "🏆 Outstanding! Math champion!"
+              : acc >= 70 ? "🌟 Great job! Keep it up!"
+              : acc >= 50 ? "👍 Good effort — practice more!"
+              : "💪 Don't give up, try again!";
+    document.getElementById("grade-msg").textContent = msg;
+    document.getElementById("end").classList.remove("hidden");
+    // Report the result to the host app (same-origin parent) to update XP/stats.
+    try {
+      window.parent.postMessage({ type: "GAME_COMPLETE", game: "EduRunner", score: session.score, accuracy: session.accuracy() }, window.location.origin);
+    } catch (e) {}
+  }
+
+  function toMenu() {
+    state = "menu";
+    clearGates();
+    hud.classList.add("hidden");
+    document.getElementById("end").classList.add("hidden");
+    document.getElementById("menu").classList.remove("hidden");
+  }
+
+  function replay() {
+    if (!session) return;
+    session.reset();
+    playerLane = 1; player.position.x = 0;
+    scoreValue.textContent = "0";
+    state = "play";
+    clock = new THREE.Clock();
+    document.getElementById("end").classList.add("hidden");
+    hud.classList.remove("hidden");
+    loadNextQuestion();
+  }
+
+  function init() {
+    initThree();
+    bindInput();
+    animate();
+  }
+
+  return { init, startGame, replay, toMenu };
+})();
+
+/* ============================================================
+   5. MENU WIRING
+   ============================================================ */
+(function wireMenu() {
+  const gradeSel = document.getElementById("grade-select");
+  const topicSel = document.getElementById("topic-select");
+
+  // populate grades
+  Object.keys(CURRICULUM).forEach(key => {
+    const opt = document.createElement("option");
+    opt.value = key; opt.textContent = CURRICULUM[key].label;
+    gradeSel.appendChild(opt);
+  });
+
+  function populateTopics() {
+    topicSel.innerHTML = "";
+    const topics = CURRICULUM[gradeSel.value].topics;
+    Object.keys(topics).forEach(key => {
+      const opt = document.createElement("option");
+      opt.value = key; opt.textContent = topics[key].label;
+      topicSel.appendChild(opt);
+    });
+    if (window.EduChapters) EduChapters.groupOptions(topicSel);
+  }
+  gradeSel.addEventListener("change", populateTopics);
+  populateTopics();
+
+  document.getElementById("start-btn").addEventListener("click", () => {
+    Game.startGame(gradeSel.value, topicSel.value);
+  });
+  document.getElementById("again-btn").addEventListener("click", () => Game.replay());
+  document.getElementById("menu-btn").addEventListener("click", () => Game.toMenu());
+})();
+
+// Boot the 3D engine once the page (and Three.js) is ready.
+window.addEventListener("load", () => {
+  if (!window.THREE) { alert("Failed to load Three.js. Check your internet connection."); return; }
+  Game.init();
+});
+</script>
+<script>
+/* EducAlvator: auto-assign the student's grade from ?grade=N and hide the grade selector. */
+(function lockGrade(){
+  function apply(){
+    var p = new URLSearchParams(location.search);
+    var g = p.get("grade");
+    if(!g) return;
+    var sel = document.getElementById("grade-select");
+    if(!sel || !sel.options.length) return;
+    var val = "grade_" + g;
+    var ok = Array.prototype.some.call(sel.options, function(o){ return o.value === val; });
+    if(!ok) return;
+    sel.value = val;
+    sel.dispatchEvent(new Event("change"));
+    sel.style.display = "none";
+    var lab = document.querySelector('label[for="grade-select"]');
+    if(lab) lab.style.display = "none";
+  }
+  if(document.readyState === "complete") setTimeout(apply, 0);
+  else window.addEventListener("load", function(){ setTimeout(apply, 0); });
+})();
+</script>
+<script src="/games/chapter-topics.js"></script>
+<script src="/games/ai-questions.js"></script>
+<script>
+/* EducAlvator: AI-generated questions for the chosen grade (see ai-questions.js). */
+(function(){
+  try{
+    var g=new URLSearchParams(location.search).get("grade");
+    var gradeObj=g&&CURRICULUM["grade_"+g];
+    if(!gradeObj||!gradeObj.topics) return;
+    var sel=document.getElementById("topic-select");
+    var builtIn=Object.keys(gradeObj.topics);
+    // Textbook chapters as extra topics; until the AI set arrives they fall back to this grade's built-in questions.
+    var fallback=[];
+    builtIn.forEach(function(k){ fallback=fallback.concat(gradeObj.topics[k].questions); });
+    var chapters=window.EduChapters?EduChapters.addTo(g,"maths",function(k,title){ gradeObj.topics[k]={label:title,questions:fallback.slice()}; }):[];
+    // Textbook chapters are the only topics where the grade has them.
+    if(chapters.length) builtIn.forEach(function(k){ delete gradeObj.topics[k]; });
+    EduAI.attach({
+      subject:"maths", grade:g,
+      keys:chapters.length?chapters.slice(0,1):builtIn, // other chapters are fetched when chosen
+      label:function(k){ return (window.EduChapters&&EduChapters.aiLabel(k))||gradeObj.topics[k].label||k; },
+      apply:function(k,qs){ gradeObj.topics[k].questions=qs; },
+      selected:function(){ return gradeObj.topics[sel.value]?[sel.value]:[]; },
+      buttons:["start-btn","again-btn"]
+    });
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<svg width="1600" height="1160" viewBox="0 0 1600 1160" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.06"/>
+    </filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="46"/>
+    </filter>
+    <clipPath id="clipA"><rect x="565" y="250" width="469" height="400" rx="28"/></clipPath>
+    <style>
+      .eyebrow{font-weight:700;font-size:18px;fill:#9ca3af;letter-spacing:.3px}
+      .title{font-weight:800;font-size:50px;fill:#111827;letter-spacing:-1.6px}
+      .word{font-weight:800;font-size:30px;fill:#111827;letter-spacing:-1px}
+      .ct{font-weight:800;font-size:25px;fill:#111827;letter-spacing:-.6px}
+      .ctd{font-weight:800;font-size:25px;fill:#ffffff;letter-spacing:-.6px}
+      .body{font-weight:500;font-size:16.5px;fill:#6b7280}
+      .bodyd{font-weight:500;font-size:16.5px;fill:#d1d5db}
+      .chip{font-weight:700;font-size:16px;fill:#111827}
+      .mut{font-weight:600;font-size:14px;fill:#9ca3af}
+      .acc{font-weight:700;font-size:15px;fill:#e05d43}
+      .pill{font-weight:700;font-size:16px;fill:#ffffff}
+    </style>
+  </defs>
+
+  <!-- paper background -->
+  <rect width="1600" height="1160" fill="#fdfbf7"/>
+
+  <!-- ============ header ============ -->
+  <svg x="60" y="46" width="48" height="48" viewBox="357 357 2830 2830">
+    <path d="M2436.076,576.608l-1482.95,-200.166l-552.212,879.495l158.669,1000.153l863.233,910.775l1719.578,-942.175l-10.02,-824.172l-1440.954,709.537l1126.824,-1177.408" fill="#e05d43"/>
+    <path d="M1394.2,813.129l11.621,955.876l795.195,-965.685l-806.817,9.809Z" fill="#ffffff"/>
+  </svg>
+  <text x="120" y="82" class="word">EducAlvator<tspan fill="#e05d43">.</tspan></text>
+
+  <rect x="1392" y="52" width="148" height="40" rx="20" fill="#e05d43"/>
+  <text x="1466" y="78" class="pill" text-anchor="middle">For students</text>
+
+  <text x="62" y="152" class="eyebrow">Six ways EducAlvator makes learning feel like play</text>
+  <text x="60" y="210" class="title">Learning that knows how to play.</text>
+
+  <!-- ============ CARD 1 · Game Worlds (pastel orange) ============ -->
+  <rect x="60" y="250" width="469" height="400" rx="28" fill="#fff4ed" stroke="#f1e5dc" filter="url(#soft)"/>
+  <rect x="96" y="286" width="54" height="54" rx="16" fill="#e05d43"/>
+  <g stroke="#ffffff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(110,300)">
+    <rect x="1" y="6" width="24" height="14" rx="7"/><line x1="7" y1="13" x2="11" y2="13"/><line x1="9" y1="11" x2="9" y2="15"/><circle cx="18" cy="12" r="1"/><circle cx="21" cy="14.5" r="1"/>
+  </g>
+  <text x="96" y="378" class="ct">Game Worlds</text>
+  <text x="96" y="412" class="body">Three arcade games — one per subject —</text>
+  <text x="96" y="434" class="body">with AI questions matched to your grade.</text>
+  <!-- game chips -->
+  <g>
+    <rect x="96" y="466" width="397" height="46" rx="15" fill="#ffffff" stroke="#f1e5dc"/>
+    <circle cx="124" cy="489" r="6" fill="#e05d43"/><text x="144" y="494" class="chip">EduRunner</text><text x="470" y="494" class="mut" text-anchor="end">Maths</text>
+    <rect x="96" y="522" width="397" height="46" rx="15" fill="#ffffff" stroke="#f1e5dc"/>
+    <circle cx="124" cy="545" r="6" fill="#e05d43"/><text x="144" y="550" class="chip">EduJumper</text><text x="470" y="550" class="mut" text-anchor="end">English</text>
+    <rect x="96" y="578" width="397" height="46" rx="15" fill="#ffffff" stroke="#f1e5dc"/>
+    <circle cx="124" cy="601" r="6" fill="#e05d43"/><text x="144" y="606" class="chip">EduSurfer</text><text x="470" y="606" class="mut" text-anchor="end">Science</text>
+  </g>
+
+  <!-- ============ CARD 2 · Study Buddy AI (dark panel) ============ -->
+  <rect x="565" y="250" width="469" height="400" rx="28" fill="#1c1917" filter="url(#soft)"/>
+  <g clip-path="url(#clipA)"><circle cx="1010" cy="276" r="90" fill="#e05d43" opacity="0.22" filter="url(#glow)"/></g>
+  <rect x="601" y="286" width="54" height="54" rx="16" fill="#ffffff" fill-opacity="0.1"/>
+  <g stroke="#e05d43" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(615,300)">
+    <path d="M3 5h20v13H10l-5 4v-4H3z"/><line x1="8" y1="11" x2="18" y2="11"/><line x1="8" y1="14.5" x2="14" y2="14.5"/>
+  </g>
+  <text x="601" y="378" class="ctd">Study Buddy AI</text>
+  <text x="601" y="412" class="bodyd">A tutor that reads your PDFs, images and</text>
+  <text x="601" y="434" class="bodyd">worksheets — ask by typing or by voice.</text>
+  <!-- chat bubbles -->
+  <rect x="601" y="468" width="300" height="48" rx="16" fill="#ffffff" fill-opacity="0.08"/>
+  <text x="621" y="497" font-weight="500" font-size="15.5px" fill="#e5e7eb">I've got a fractions worksheet…</text>
+  <rect x="665" y="524" width="333" height="72" rx="16" fill="#e05d43"/>
+  <text x="685" y="552" font-weight="600" font-size="15.5px" fill="#ffffff">Let's turn it into a quick flight</text>
+  <text x="685" y="574" font-weight="600" font-size="15.5px" fill="#ffffff">challenge.</text>
+  <rect x="854" y="562" width="124" height="24" rx="8" fill="#ffffff" fill-opacity="0.22"/>
+  <text x="916" y="579" font-weight="700" font-size="12px" fill="#ffffff" text-anchor="middle">Fractions.pdf</text>
+
+  <!-- ============ CARD 3 · EduPanel (white) ============ -->
+  <rect x="1070" y="250" width="469" height="400" rx="28" fill="#ffffff" stroke="#f3f4f6" filter="url(#soft)"/>
+  <rect x="1106" y="286" width="54" height="54" rx="16" fill="#f0edf6"/>
+  <g stroke="#e05d43" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(1120,300)">
+    <rect x="2" y="4" width="22" height="18" rx="3"/><line x1="16" y1="4" x2="16" y2="22"/><line x1="2" y1="9" x2="24" y2="9"/>
+  </g>
+  <text x="1106" y="378" class="ct">EduPanel for Chrome</text>
+  <text x="1106" y="412" class="body">A side panel that reads the PDF or web</text>
+  <text x="1106" y="434" class="body">page in your tab and answers beside it.</text>
+  <!-- mini browser -->
+  <rect x="1106" y="462" width="397" height="162" rx="14" fill="#fdfbf7" stroke="#e5e7eb"/>
+  <rect x="1106" y="462" width="397" height="30" rx="14" fill="#f3f4f6"/>
+  <circle cx="1124" cy="477" r="4" fill="#d6d3d1"/><circle cx="1138" cy="477" r="4" fill="#d6d3d1"/><circle cx="1152" cy="477" r="4" fill="#d6d3d1"/>
+  <rect x="1170" y="470" width="180" height="14" rx="7" fill="#ffffff" stroke="#e5e7eb"/>
+  <!-- page -->
+  <rect x="1118" y="502" width="236" height="112" rx="8" fill="#ffffff" stroke="#f3f4f6"/>
+  <rect x="1132" y="518" width="150" height="9" rx="4" fill="#111827" opacity="0.1"/>
+  <rect x="1132" y="536" width="208" height="7" rx="3" fill="#111827" opacity="0.08"/>
+  <rect x="1132" y="550" width="196" height="7" rx="3" fill="#e05d43" opacity="0.45"/>
+  <rect x="1132" y="564" width="208" height="7" rx="3" fill="#111827" opacity="0.08"/>
+  <rect x="1132" y="582" width="120" height="22" rx="6" fill="#e9f3f1"/>
+  <!-- panel -->
+  <rect x="1366" y="502" width="125" height="112" rx="8" fill="#1c1917"/>
+  <text x="1380" y="524" font-weight="800" font-size="12px" fill="#ffffff">EduPanel<tspan fill="#e05d43">.</tspan></text>
+  <rect x="1392" y="536" width="86" height="26" rx="9" fill="#e05d43"/>
+  <rect x="1380" y="568" width="98" height="34" rx="9" fill="#ffffff" fill-opacity="0.08"/>
+
+  <!-- ============ CARD 4 · Resources (pastel teal) ============ -->
+  <rect x="60" y="686" width="469" height="400" rx="28" fill="#e9f3f1" stroke="#dbe9e5" filter="url(#soft)"/>
+  <rect x="96" y="722" width="54" height="54" rx="16" fill="#e05d43"/>
+  <g stroke="#ffffff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(110,736)">
+    <path d="M6 2h8l6 6v14H6z"/><path d="M14 2v6h6"/><line x1="9" y1="13" x2="17" y2="13"/><line x1="9" y1="17" x2="17" y2="17"/>
+  </g>
+  <text x="96" y="814" class="ct">Study Resources</text>
+  <text x="96" y="848" class="body">A grade-locked PDF library — chapters and</text>
+  <text x="96" y="870" class="body">worksheets ready to open or hand to the AI.</text>
+  <!-- pdf rows -->
+  <g>
+    <rect x="96" y="902" width="397" height="52" rx="14" fill="#ffffff" stroke="#dbe9e5"/>
+    <rect x="112" y="915" width="26" height="26" rx="7" fill="#e9f3f1"/><text x="152" y="935" class="chip">First Flight — Prose Ch. 1</text><rect x="420" y="917" width="60" height="22" rx="8" fill="#fdfbf7"/><text x="450" y="932" class="mut" text-anchor="middle">8 pages</text>
+    <rect x="96" y="962" width="397" height="52" rx="14" fill="#ffffff" stroke="#dbe9e5"/>
+    <rect x="112" y="975" width="26" height="26" rx="7" fill="#e9f3f1"/><text x="152" y="995" class="chip">Life Processes — Ch. 6</text><rect x="420" y="977" width="60" height="22" rx="8" fill="#fdfbf7"/><text x="450" y="992" class="mut" text-anchor="middle">420 KB</text>
+    <rect x="96" y="1022" width="397" height="52" rx="14" fill="#ffffff" stroke="#dbe9e5"/>
+    <rect x="112" y="1035" width="26" height="26" rx="7" fill="#e9f3f1"/><text x="152" y="1055" class="chip">Footprints — Ch. 4</text><rect x="420" y="1037" width="60" height="22" rx="8" fill="#fdfbf7"/><text x="450" y="1052" class="mut" text-anchor="middle">6 pages</text>
+  </g>
+
+  <!-- ============ CARD 5 · Quizzes & Flashcards (pastel purple) ============ -->
+  <rect x="565" y="686" width="469" height="400" rx="28" fill="#f0edf6" stroke="#e5e0ee" filter="url(#soft)"/>
+  <rect x="601" y="722" width="54" height="54" rx="16" fill="#e05d43"/>
+  <g stroke="#ffffff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(615,736)">
+    <rect x="3" y="6" width="16" height="16" rx="3"/><path d="M7 6V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3"/>
+  </g>
+  <text x="601" y="814" class="ct">Quizzes &amp; Flashcards</text>
+  <text x="601" y="848" class="body">Turn any chapter into instant quizzes and</text>
+  <text x="601" y="870" class="body">flip-cards to check what has stuck.</text>
+  <!-- flashcard -->
+  <rect x="601" y="902" width="248" height="152" rx="16" fill="#ffffff" stroke="#e5e0ee"/>
+  <text x="625" y="940" class="mut">QUESTION</text>
+  <text x="625" y="972" font-weight="700" font-size="17px" fill="#111827">What is 3/4 + 1/4 ?</text>
+  <rect x="625" y="996" width="200" height="38" rx="12" fill="#fff4ed"/>
+  <text x="645" y="1020" class="acc">Tap to flip → answer: 1</text>
+  <!-- quiz progress -->
+  <rect x="873" y="902" width="125" height="152" rx="16" fill="#1c1917"/>
+  <text x="892" y="936" font-weight="700" font-size="13px" fill="#9ca3af">QUIZ</text>
+  <text x="892" y="968" font-weight="800" font-size="28px" fill="#ffffff">8<tspan font-size="16px" fill="#9ca3af">/10</tspan></text>
+  <circle cx="902" cy="1004" r="5" fill="#e05d43"/><circle cx="922" cy="1004" r="5" fill="#e05d43"/><circle cx="942" cy="1004" r="5" fill="#e05d43"/><circle cx="962" cy="1004" r="5" fill="#e05d43"/><circle cx="982" cy="1004" r="5" fill="#ffffff" fill-opacity="0.2"/>
+  <rect x="892" y="1022" width="92" height="20" rx="8" fill="#ffffff" fill-opacity="0.08"/>
+
+  <!-- ============ CARD 6 · Leaderboard & Reports (white) ============ -->
+  <rect x="1070" y="686" width="469" height="400" rx="28" fill="#ffffff" stroke="#f3f4f6" filter="url(#soft)"/>
+  <rect x="1106" y="722" width="54" height="54" rx="16" fill="#fff4ed"/>
+  <g stroke="#e05d43" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(1120,736)">
+    <line x1="4" y1="21" x2="4" y2="12"/><line x1="12" y1="21" x2="12" y2="5"/><line x1="20" y1="21" x2="20" y2="14"/>
+  </g>
+  <text x="1106" y="814" class="ct">Progress &amp; Rankings</text>
+  <text x="1106" y="848" class="body">A weekly report, streaks and a friendly</text>
+  <text x="1106" y="870" class="body">grade leaderboard to keep momentum up.</text>
+  <!-- mini bar chart -->
+  <rect x="1106" y="902" width="236" height="152" rx="16" fill="#fdfbf7" stroke="#f3f4f6"/>
+  <line x1="1126" y1="1030" x2="1322" y2="1030" stroke="#e5e7eb"/>
+  <rect x="1140" y="990" width="26" height="40" rx="6" fill="#f0edf6"/>
+  <rect x="1182" y="968" width="26" height="62" rx="6" fill="#e9f3f1"/>
+  <rect x="1224" y="946" width="26" height="84" rx="6" fill="#fff4ed"/>
+  <rect x="1266" y="928" width="26" height="102" rx="6" fill="#e05d43"/>
+  <text x="1126" y="938" class="mut">This week</text>
+  <!-- leaderboard + streak -->
+  <rect x="1366" y="902" width="125" height="72" rx="14" fill="#1c1917"/>
+  <text x="1384" y="932" font-weight="700" font-size="12px" fill="#9ca3af">RANK</text>
+  <text x="1384" y="960" font-weight="800" font-size="24px" fill="#ffffff">#2 <tspan font-size="13px" fill="#e05d43">Grade 10</tspan></text>
+  <rect x="1366" y="982" width="125" height="72" rx="14" fill="#fff4ed" stroke="#f1e5dc"/>
+  <text x="1384" y="1012" font-weight="800" font-size="24px" fill="#111827">🔥 12</text>
+  <text x="1384" y="1038" class="mut">day streak</text>
+</svg>

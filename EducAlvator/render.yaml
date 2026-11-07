@@ -1,0 +1,35 @@
+# Render Blueprint: one Node web service that serves the built app and the API
+# (server/index.js). Create it from the Render dashboard: New → Blueprint, pick
+# this repository, then fill in the secret values it asks for.
+services:
+  - type: web
+    name: educalvator
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Study Buddy, quizzes, flashcards and game questions.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Progress Review on the student report (falls back to GEMINI_API_KEY).
+      - key: REVIEW_GEMINI_API_KEY
+        sync: false
+      # Answers when a request with the main or review key ends in an error.
+      - key: GEMINI_BACKUP_API_KEY
+        sync: false
+      # Answers when the backup key errors too.
+      - key: GEMINI_BACKUP_API_KEY_2
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3-flash-preview
+      - key: GEMINI_TEXT_MODEL
+        value: gemini-3.1-flash-lite
+      # Signs the sign-in session cookie; generated once by Render.
+      # Sign-in accounts are kept in ./data. On a plan with a persistent disk,
+      # add AUTH_DATA_DIR set to the disk's mount path so they survive redeploys.
+      - key: SESSION_SECRET
+        generateValue: true

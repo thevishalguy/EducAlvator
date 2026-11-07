@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "EduPanel",
+  "version": "1.0.0",
+  "description": "Ask questions about the PDF or web page open in your current tab, in a side panel.",
+  "minimum_chrome_version": "128",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "EduPanel",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": ["sidePanel", "storage", "activeTab", "tabs", "scripting"],
+  "host_permissions": ["<all_urls>"]
+}

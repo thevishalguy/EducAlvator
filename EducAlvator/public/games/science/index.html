@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>EduSurf: Science Edition</title>
+<style>
+  :root {
+    --sea-top: #0a3d62;
+    --sea-mid: #0d6ab8;
+    --sea-light: #3fa7e0;
+    --foam: #eaf6ff;
+    --accent: #ffd166;
+    --correct: #2ecc71;
+    --wrong: #e74c3c;
+    --panel: rgba(8, 28, 48, 0.88);
+    --ink: #f4fbff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #04293f;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+  }
+
+  #game-wrap {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--sea-mid);
+  }
+
+  /* ---------- Shared overlay layout ---------- */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+    padding: 20px;
+  }
+  .hidden { display: none !important; }
+
+  .card {
+    width: min(520px, 94vw);
+    background: var(--panel);
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    border-radius: 22px;
+    padding: 30px 30px 34px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    text-align: center;
+  }
+
+  .logo {
+    font-size: clamp(32px, 7vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    background: linear-gradient(90deg, var(--accent), #ff8c42);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tagline {
+    margin-top: 8px;
+    font-size: 15px;
+    color: #bfe2ff;
+    opacity: 0.9;
+  }
+  .wave-emoji { font-size: 40px; display: block; margin-bottom: 4px; }
+
+  .field { margin-top: 22px; text-align: left; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8fc6ef;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  select {
+    width: 100%;
+    padding: 13px 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    background: #0a2e4a;
+    color: var(--ink);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238fc6ef' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .btn {
+    margin-top: 26px;
+    width: 100%;
+    padding: 16px;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    color: #04293f;
+    background: linear-gradient(90deg, var(--accent), #ffb347);
+    box-shadow: 0 10px 24px rgba(255, 180, 71, 0.35);
+    transition: transform 0.08s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(255, 180, 71, 0.45); }
+  .btn:active { transform: translateY(0); }
+
+  .hint {
+    margin-top: 18px;
+    font-size: 12.5px;
+    color: #7fb4dc;
+    line-height: 1.5;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #question-hud {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(680px, 92vw);
+    background: var(--panel);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    padding: 14px 20px;
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+  #question-topic {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  #question-text {
+    font-size: clamp(16px, 2.6vw, 22px);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  #top-bar {
+    position: absolute;
+    top: 16px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0 18px;
+  }
+  .stat-pill {
+    background: var(--panel);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 10px 16px;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+  #score-pill .label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #8fc6ef;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  #lives-pill { font-size: 20px; letter-spacing: 2px; }
+
+  /* ---------- End screen ---------- */
+  #end-title { font-size: clamp(28px, 6vw, 42px); font-weight: 800; }
+  #end-emoji { font-size: 56px; display: block; margin-bottom: 6px; }
+  #end-sub { margin-top: 6px; font-size: 16px; color: #bfe2ff; }
+  .score-big {
+    margin: 22px 0 6px;
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .score-label { font-size: 14px; color: #8fc6ef; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ---------- Screen flash ---------- */
+  #flash {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease-out;
+  }
+  #flash.green { background: radial-gradient(circle, rgba(46,204,113,0.0) 20%, rgba(46,204,113,0.55) 100%); opacity: 1; }
+  #flash.red   { background: radial-gradient(circle, rgba(231,76,60,0.0) 20%, rgba(231,76,60,0.6) 100%); opacity: 1; }
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <!-- Screen flash feedback -->
+  <div id="flash"></div>
+
+  <!-- In-game HUD -->
+  <div id="hud" class="hidden">
+    <div id="top-bar">
+      <div class="stat-pill" id="score-pill">
+        <span class="label">Score</span>
+        <span id="score-val">0/10</span>
+      </div>
+      <div class="stat-pill" id="lives-pill">
+        <span id="lives-val">❤️❤️❤️</span>
+      </div>
+    </div>
+    <div id="question-hud">
+      <div id="question-topic">Topic</div>
+      <div id="question-text">Question…</div>
+    </div>
+  </div>
+
+  <!-- STATE_MENU -->
+  <div id="menu" class="overlay">
+    <div class="card">
+      <span class="wave-emoji">🌊🏄</span>
+      <div class="logo">EduSurf</div>
+      <div class="tagline">Science Edition — ride the waves, answer to survive!</div>
+
+      <div class="field">
+        <label for="grade-select">Select Grade</label>
+        <select id="grade-select"></select>
+      </div>
+      <div class="field">
+        <label for="topic-select">Select Topic</label>
+        <select id="topic-select"></select>
+      </div>
+
+      <button class="btn" id="start-btn">Start Surfing 🏄‍♂️</button>
+      <div class="hint">
+        Steer with <b>← →</b> / <b>A&nbsp;D</b> keys, or drag with mouse / finger.<br>
+        Surf through the <b>correct answer</b> buoy. 3 lives • 10 questions.
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE_END -->
+  <div id="end" class="overlay hidden">
+    <div class="card">
+      <span id="end-emoji">🏆</span>
+      <div id="end-title">Session Complete!</div>
+      <div id="end-sub">Great surfing out there.</div>
+      <div class="score-big" id="final-score">0</div>
+      <div class="score-label">Correct Answers out of 10</div>
+      <button class="btn" id="again-btn">Play Again 🔁</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   EduSurf: Science Edition
+   Single-file HTML5 Canvas endless-scroller Q&A game.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   STEP 4 (data): Dynamic Curriculum System
+   Grade 1–10 CBSE-flavoured science, >= 2 questions per grade.
+   Notation uses LaTeX-style markers ($...$) rendered via latexToText().
+   --------------------------------------------------------------------- */
+const CURRICULUM = {
+  grade_1: {
+    living_things: [
+      { q: "Which of these is a living thing?", options: ["A Dog", "A Rock", "A Toy Car"], correctIndex: 0 },
+      { q: "What do living things need to stay alive?", options: ["Food & Water", "Paint", "Plastic"], correctIndex: 0 },
+      { q: "Which one can grow bigger over time?", options: ["A Chair", "A Baby", "A Spoon"], correctIndex: 1 }
+    ],
+    plants: [
+      { q: "Which part of the plant grows under the soil?", options: ["Leaf", "Root", "Flower"], correctIndex: 1 },
+      { q: "What do green leaves use to make food?", options: ["Sunlight", "Darkness", "Ice"], correctIndex: 0 },
+      { q: "Which part of a plant is usually colourful and smells nice?", options: ["Stem", "Root", "Flower"], correctIndex: 2 }
+    ]
+  },
+  grade_2: {
+    animals: [
+      { q: "Which animal lives in water?", options: ["Fish", "Lion", "Cow"], correctIndex: 0 },
+      { q: "What covers a bird's body?", options: ["Scales", "Feathers", "Fur"], correctIndex: 1 },
+      { q: "Which animal gives us milk?", options: ["Hen", "Cow", "Snake"], correctIndex: 1 }
+    ],
+    our_body: [
+      { q: "Which body part do we use to smell?", options: ["Ears", "Nose", "Hands"], correctIndex: 1 },
+      { q: "How many eyes do we have?", options: ["One", "Two", "Three"], correctIndex: 1 },
+      { q: "Which part helps us to walk?", options: ["Legs", "Nose", "Ears"], correctIndex: 0 }
+    ]
+  },
+  grade_3: {
+    food: [
+      { q: "Which of these is a healthy food?", options: ["Fruits", "Candy", "Chips"], correctIndex: 0 },
+      { q: "Milk, curd and cheese come from?", options: ["Plants", "Animals", "Rocks"], correctIndex: 1 },
+      { q: "Which gives our body energy?", options: ["Food", "Toys", "Books"], correctIndex: 0 }
+    ],
+    water: [
+      { q: "Water becomes ice when it is?", options: ["Heated", "Cooled", "Shaken"], correctIndex: 1 },
+      { q: "Water turns into vapour when it is?", options: ["Frozen", "Heated", "Buried"], correctIndex: 1 },
+      { q: "We should drink water that is?", options: ["Muddy", "Clean", "Coloured"], correctIndex: 1 }
+    ]
+  },
+  grade_4: {
+    plants_adaptation: [
+      { q: "A cactus stores water in its?", options: ["Thin leaves", "Thick stem", "Roots only"], correctIndex: 1 },
+      { q: "Plants in deserts have leaves shaped like?", options: ["Broad sheets", "Spines", "Cups"], correctIndex: 1 },
+      { q: "Which helps a plant anchor to the soil?", options: ["Roots", "Flowers", "Fruits"], correctIndex: 0 }
+    ],
+    matter: [
+      { q: "Which of these is a solid?", options: ["Water", "Stone", "Air"], correctIndex: 1 },
+      { q: "Air is an example of a?", options: ["Solid", "Liquid", "Gas"], correctIndex: 2 },
+      { q: "Which takes the shape of its container?", options: ["A Brick", "A Liquid", "A Ball"], correctIndex: 1 }
+    ]
+  },
+  grade_5: {
+    human_physiology: [
+      { q: "Which system includes the brain and spinal cord?", options: ["Circulatory", "Skeletal", "Nervous"], correctIndex: 2 },
+      { q: "Which organ pumps blood around the body?", options: ["Heart", "Lungs", "Liver"], correctIndex: 0 },
+      { q: "We breathe in oxygen using our?", options: ["Lungs", "Kidneys", "Stomach"], correctIndex: 0 }
+    ],
+    weather: [
+      { q: "A tool to measure temperature is a?", options: ["Thermometer", "Barometer", "Ruler"], correctIndex: 0 },
+      { q: "Clouds are made of tiny drops of?", options: ["Sand", "Water", "Smoke"], correctIndex: 1 },
+      { q: "The water cycle is powered mainly by the?", options: ["Moon", "Sun", "Wind"], correctIndex: 1 }
+    ]
+  },
+  grade_6: {
+    food_components: [
+      { q: "Which nutrient is called the 'energy giver'?", options: ["Carbohydrates", "Vitamins", "Water"], correctIndex: 0 },
+      { q: "Proteins are known as?", options: ["Energy givers", "Body builders", "Protective foods"], correctIndex: 1 },
+      { q: "A lack of Vitamin C causes?", options: ["Scurvy", "Night blindness", "Rickets"], correctIndex: 0 }
+    ],
+    motion: [
+      { q: "Motion of a ball rolling in a straight line is called?", options: ["Circular", "Rectilinear", "Periodic"], correctIndex: 1 },
+      { q: "The motion of a swinging pendulum is?", options: ["Rectilinear", "Periodic", "Random"], correctIndex: 1 },
+      { q: "The SI unit of length is the?", options: ["Metre", "Kilogram", "Second"], correctIndex: 0 }
+    ]
+  },
+  grade_7: {
+    nutrition: [
+      { q: "Plants make their own food by?", options: ["Respiration", "Photosynthesis", "Digestion"], correctIndex: 1 },
+      { q: "A plant like the pitcher plant is?", options: ["Parasitic", "Insectivorous", "Saprophytic"], correctIndex: 1 },
+      { q: "The green pigment in leaves is called?", options: ["Haemoglobin", "Chlorophyll", "Melanin"], correctIndex: 1 }
+    ],
+    heat: [
+      { q: "Heat flows from a hot body to a?", options: ["Hotter body", "Colder body", "Same body"], correctIndex: 1 },
+      { q: "A clinical thermometer measures the temperature of?", options: ["Weather", "Human body", "Ovens"], correctIndex: 1 },
+      { q: "Transfer of heat in metals happens by?", options: ["Conduction", "Radiation", "No transfer"], correctIndex: 0 }
+    ]
+  },
+  grade_8: {
+    chemistry_metals: [
+      { q: "Which of these is a physical property of metals?", options: ["Brittle", "Malleable", "Non-sonorous"], correctIndex: 1 },
+      { q: "Which is a non-metal?", options: ["Iron", "Sulphur", "Copper"], correctIndex: 1 },
+      { q: "Metals are generally good conductors of?", options: ["Only sound", "Heat & electricity", "Nothing"], correctIndex: 1 }
+    ],
+    cell: [
+      { q: "The basic structural unit of life is the?", options: ["Atom", "Cell", "Organ"], correctIndex: 1 },
+      { q: "Which part controls all activities of a cell?", options: ["Nucleus", "Cell wall", "Vacuole"], correctIndex: 0 },
+      { q: "A rigid cell wall is found in?", options: ["Animal cells", "Plant cells", "Neither"], correctIndex: 1 }
+    ]
+  },
+  grade_9: {
+    atoms: [
+      { q: "The smallest particle of an element is an?", options: ["Molecule", "Atom", "Mixture"], correctIndex: 1 },
+      { q: "Which sub-atomic particle has a negative charge?", options: ["Proton", "Neutron", "Electron"], correctIndex: 2 },
+      { q: "The symbol $H_2O$ represents?", options: ["Oxygen", "Water", "Hydrogen gas"], correctIndex: 1 }
+    ],
+    motion_laws: [
+      { q: "Newton's first law is also called the law of?", options: ["Inertia", "Gravity", "Momentum"], correctIndex: 0 },
+      { q: "The SI unit of force is the?", options: ["Joule", "Newton", "Watt"], correctIndex: 1 },
+      { q: "Formula for acceleration is $a = (v-u)/t$. Here $u$ is the?", options: ["Final speed", "Initial speed", "Time"], correctIndex: 1 }
+    ]
+  },
+  grade_10: {
+    physics_electricity: [
+      { q: "What is the correct formula for electric power?", options: ["$P = VI$", "$P = V/I$", "$P = I/V$"], correctIndex: 0 },
+      { q: "Ohm's law is written as?", options: ["$V = IR$", "$V = I/R$", "$V = R/I$"], correctIndex: 0 },
+      { q: "The SI unit of electric resistance is the?", options: ["Volt", "Ampere", "Ohm"], correctIndex: 2 }
+    ],
+    chemistry_acids: [
+      { q: "Acids are defined by the presence of which ions?", options: ["$OH^-$ ions", "$H^+$ ions", "$Na^+$ ions"], correctIndex: 1 },
+      { q: "Bases produce which ions in water?", options: ["$H^+$ ions", "$OH^-$ ions", "$Cl^-$ ions"], correctIndex: 1 },
+      { q: "A pH value of 7 means the solution is?", options: ["Acidic", "Neutral", "Basic"], correctIndex: 1 }
+    ]
+  }
+};
+
+const TOPIC_LABELS = {
+  living_things: "Living Things", plants: "Plants", animals: "Animals",
+  our_body: "Our Body", food: "Food", water: "Water",
+  plants_adaptation: "Plant Adaptation", matter: "Matter",
+  human_physiology: "Human Physiology", weather: "Weather & Water Cycle",
+  food_components: "Components of Food", motion: "Motion",
+  nutrition: "Nutrition in Plants", heat: "Heat",
+  chemistry_metals: "Metals & Non-Metals", cell: "The Cell",
+  atoms: "Atoms & Molecules", motion_laws: "Laws of Motion",
+  physics_electricity: "Electricity", chemistry_acids: "Acids, Bases & Salts"
+};
+
+/* ---------------------------------------------------------------------
+   Tiny LaTeX-ish → readable-text converter (keeps us dependency-free).
+   Handles $...$, ^superscripts and _subscripts for simple notation.
+   --------------------------------------------------------------------- */
+const SUP = { "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","+":"⁺","-":"⁻","=":"⁼","(":"⁽",")":"⁾","n":"ⁿ","i":"ⁱ" };
+const SUB = { "0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎" };
+
+function mapScript(str, table) {
+  return str.split("").map(ch => table[ch] || ch).join("");
+}
+
+function latexToText(raw) {
+  if (!raw) return "";
+  // Strip the $ delimiters, we render inline.
+  let s = raw.replace(/\$/g, "");
+  // ^{...} and _{...}
+  s = s.replace(/\^\{([^}]*)\}/g, (_, g) => mapScript(g, SUP));
+  s = s.replace(/_\{([^}]*)\}/g, (_, g) => mapScript(g, SUB));
+  // ^x and _x (single char)
+  s = s.replace(/\^(\S)/g, (_, g) => mapScript(g, SUP));
+  s = s.replace(/_(\S)/g, (_, g) => mapScript(g, SUB));
+  return s;
+}
+
+/* ---------------------------------------------------------------------
+   Canvas + DPI setup
+   --------------------------------------------------------------------- */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+/* ---------------------------------------------------------------------
+   Game constants / state
+   --------------------------------------------------------------------- */
+const STATE = { MENU: "menu", PLAY: "play", END: "end" };
+let gameState = STATE.MENU;
+
+const SCROLL_SPEED = 100;       // px / second — water + gate travel speed (slower so there's time to read & pick the answer)
+const TOTAL_QUESTIONS = 10;
+const START_LIVES = 3;
+
+const player = {
+  w: 54, h: 64,
+  x: 0, y: 0,          // top-left
+  targetX: 0,          // desired centre X (for smooth lerp)
+  tilt: 0
+};
+
+let lives, score, answered;
+let questions = [];      // the selected 10 questions (shuffled options)
+let currentIndex = 0;
+let gates = null;        // active row of answer gates (or null)
+let waterOffset = 0;
+let lastTime = 0;
+let rafId = null;
+let flashTimer = 0;
+let spawnCooldown = 0;   // small delay before next row appears
+let transitioning = false;
+
+/* ---------------------------------------------------------------------
+   DOM references
+   --------------------------------------------------------------------- */
+const el = {
+  menu: document.getElementById("menu"),
+  end: document.getElementById("end"),
+  hud: document.getElementById("hud"),
+  flash: document.getElementById("flash"),
+  gradeSelect: document.getElementById("grade-select"),
+  topicSelect: document.getElementById("topic-select"),
+  startBtn: document.getElementById("start-btn"),
+  againBtn: document.getElementById("again-btn"),
+  scoreVal: document.getElementById("score-val"),
+  livesVal: document.getElementById("lives-val"),
+  questionText: document.getElementById("question-text"),
+  questionTopic: document.getElementById("question-topic"),
+  finalScore: document.getElementById("final-score"),
+  endTitle: document.getElementById("end-title"),
+  endSub: document.getElementById("end-sub"),
+  endEmoji: document.getElementById("end-emoji")
+};
+
+/* ---------------------------------------------------------------------
+   STEP 1: Menu population & wiring
+   --------------------------------------------------------------------- */
+function populateGrades() {
+  el.gradeSelect.innerHTML = "";
+  for (let g = 1; g <= 10; g++) {
+    const opt = document.createElement("option");
+    opt.value = "grade_" + g;
+    opt.textContent = "Grade " + g;
+    el.gradeSelect.appendChild(opt);
+  }
+  el.gradeSelect.value = "grade_1";
+}
+
+function populateTopics() {
+  const gradeKey = el.gradeSelect.value;
+  const topics = Object.keys(CURRICULUM[gradeKey] || {});
+  el.topicSelect.innerHTML = "";
+
+  const allOpt = document.createElement("option");
+  allOpt.value = "__all__";
+  allOpt.textContent = "All Topics (Mixed)";
+  el.topicSelect.appendChild(allOpt);
+
+  topics.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = TOPIC_LABELS[t] || t;
+    el.topicSelect.appendChild(opt);
+  });
+  el.topicSelect.value = "__all__";
+  if (window.EduChapters) EduChapters.groupOptions(el.topicSelect);
+}
+
+el.gradeSelect.addEventListener("change", populateTopics);
+
+/* ---------------------------------------------------------------------
+   Curriculum Manager: shuffle + select exactly 10 questions
+   --------------------------------------------------------------------- */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildPool(gradeKey, topicKey) {
+  const grade = CURRICULUM[gradeKey] || {};
+  let pool = [];
+  if (topicKey === "__all__") {
+    Object.keys(grade).forEach(t => {
+      if (window.EduChapters && EduChapters.isChapter(t)) return; // "All topics" mixes the built-in topics
+      grade[t].forEach(q => pool.push({ ...q, _topic: t }));
+    });
+  } else {
+    (grade[topicKey] || []).forEach(q => pool.push({ ...q, _topic: topicKey }));
+  }
+  return pool;
+}
+
+// Randomise the lane (Left/Center/Right) of the correct answer per question.
+function randomizeOptions(q) {
+  const correctText = q.options[q.correctIndex];
+  const shuffled = shuffle(q.options);
+  return {
+    q: q.q,
+    topic: q._topic,
+    options: shuffled,
+    correctIndex: shuffled.indexOf(correctText)
+  };
+}
+
+function selectQuestions(gradeKey, topicKey) {
+  let pool = buildPool(gradeKey, topicKey);
+  if (pool.length === 0) return [];
+
+  // Shuffle the pool; if fewer than 10, cycle through again to reach 10.
+  let picked = [];
+  let bag = shuffle(pool);
+  while (picked.length < TOTAL_QUESTIONS) {
+    if (bag.length === 0) bag = shuffle(pool);
+    picked.push(bag.pop());
+  }
+  return picked.slice(0, TOTAL_QUESTIONS).map(randomizeOptions);
+}
+
+/* ---------------------------------------------------------------------
+   Audio — generated with WebAudio (no external files)
+   --------------------------------------------------------------------- */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { audioCtx = null; }
+  }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+
+function playTone(freqs, duration, type = "sine", startGain = 0.18) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  freqs.forEach((f, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f, now + i * 0.06);
+    gain.gain.setValueAtTime(startGain, now + i * 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.06 + duration);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now + i * 0.06);
+    osc.stop(now + i * 0.06 + duration + 0.02);
+  });
+}
+
+function soundCorrect() { playTone([523.25, 659.25, 783.99], 0.22, "triangle", 0.2); } // splash/success
+function soundWrong()   { playTone([196.0, 155.56], 0.3, "sawtooth", 0.16); }          // wipeout buzzer
+
+/* ---------------------------------------------------------------------
+   STEP 3: Player controller — input handling
+   --------------------------------------------------------------------- */
+const keys = { left: false, right: false };
+
+window.addEventListener("keydown", (e) => {
+  if (["ArrowLeft", "a", "A"].includes(e.key)) keys.left = true;
+  if (["ArrowRight", "d", "D"].includes(e.key)) keys.right = true;
+});
+window.addEventListener("keyup", (e) => {
+  if (["ArrowLeft", "a", "A"].includes(e.key)) keys.left = false;
+  if (["ArrowRight", "d", "D"].includes(e.key)) keys.right = false;
+});
+
+// Mouse / touch drag — set the player's target centre X directly.
+let pointerActive = false;
+function pointerX(evt) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  return clientX - rect.left;
+}
+function onPointerDown(e) { if (gameState === STATE.PLAY) { pointerActive = true; player.targetX = pointerX(e); } }
+function onPointerMove(e) { if (pointerActive && gameState === STATE.PLAY) { player.targetX = pointerX(e); e.preventDefault(); } }
+function onPointerUp() { pointerActive = false; }
+
+canvas.addEventListener("mousedown", onPointerDown);
+canvas.addEventListener("mousemove", onPointerMove);
+window.addEventListener("mouseup", onPointerUp);
+canvas.addEventListener("touchstart", onPointerDown, { passive: false });
+canvas.addEventListener("touchmove", onPointerMove, { passive: false });
+window.addEventListener("touchend", onPointerUp);
+
+/* ---------------------------------------------------------------------
+   Game flow
+   --------------------------------------------------------------------- */
+function startGame() {
+  ensureAudio();
+  questions = selectQuestions(el.gradeSelect.value, el.topicSelect.value);
+  if (questions.length === 0) return;
+
+  lives = START_LIVES;
+  score = 0;
+  answered = 0;
+  currentIndex = 0;
+  gates = null;
+  spawnCooldown = 0.3;
+  transitioning = false;
+  waterOffset = 0;
+
+  player.x = W / 2 - player.w / 2;
+  player.y = H - player.h - 90;
+  player.targetX = W / 2;
+  player.tilt = 0;
+
+  updateHUD();
+  showQuestion();
+
+  gameState = STATE.PLAY;
+  el.menu.classList.add("hidden");
+  el.end.classList.add("hidden");
+  el.hud.classList.remove("hidden");
+
+  lastTime = performance.now();
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+
+function showQuestion() {
+  const q = questions[currentIndex];
+  el.questionText.textContent = latexToText(q.q);
+  el.questionTopic.textContent = TOPIC_LABELS[q.topic] || "Science";
+}
+
+function updateHUD() {
+  el.scoreVal.textContent = score + "/" + TOTAL_QUESTIONS;
+  el.livesVal.textContent = "❤️".repeat(Math.max(0, lives)) + "🖤".repeat(Math.max(0, START_LIVES - lives));
+}
+
+function flashScreen(color) {
+  el.flash.className = color;
+  flashTimer = 0.28;
+}
+
+function endGame(win) {
+  gameState = STATE.END;
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  el.hud.classList.add("hidden");
+  el.end.classList.remove("hidden");
+
+  el.finalScore.textContent = score;
+  if (win) {
+    el.endEmoji.textContent = score >= 8 ? "🏆" : score >= 5 ? "🎉" : "🌊";
+    el.endTitle.textContent = "Session Complete!";
+    el.endSub.textContent = score >= 8 ? "Outstanding surfing, science champ!"
+                          : score >= 5 ? "Nice ride — keep practising!"
+                          : "You finished the course — try again to improve!";
+  } else {
+    el.endEmoji.textContent = "💦";
+    el.endTitle.textContent = "Wiped Out!";
+    el.endSub.textContent = "You ran out of lives. Paddle back and try again!";
+  }
+  // Report the result to the host app (same-origin parent) to update XP/stats.
+  // Science score is a correct-count, so scale it to match the other games.
+  try {
+    var _acc = Math.round((score / TOTAL_QUESTIONS) * 100) || 0;
+    window.parent.postMessage({ type: "GAME_COMPLETE", game: "EduSurfer", score: score * 100, accuracy: _acc }, window.location.origin);
+  } catch (e) {}
+}
+
+/* ---------------------------------------------------------------------
+   STEP 5: Spawner — one row of 3 answer gates ("buoys/islands")
+   --------------------------------------------------------------------- */
+function spawnGates() {
+  const q = questions[currentIndex];
+  const laneW = W / 3;
+  const gap = Math.min(26, laneW * 0.1);
+  const gateH = 108;
+
+  const gateList = q.options.map((opt, i) => ({
+    lane: i,
+    x: i * laneW + gap / 2,
+    w: laneW - gap,
+    h: gateH,
+    text: latexToText(opt),
+    correct: i === q.correctIndex
+  }));
+
+  gates = {
+    y: -gateH - 10,        // just off-screen at the top
+    h: gateH,
+    list: gateList,
+    resolved: false
+  };
+}
+
+function resolveCollision() {
+  if (!gates || gates.resolved) return;
+  const pcx = player.x + player.w / 2;
+  const laneW = W / 3;
+  let lane = Math.floor(pcx / laneW);
+  lane = Math.max(0, Math.min(2, lane));
+  const chosen = gates.list[lane];
+
+  gates.resolved = true;
+  answered++;
+
+  if (chosen.correct) {
+    score++;
+    flashScreen("green");
+    soundCorrect();
+  } else {
+    lives--;
+    flashScreen("red");
+    soundWrong();
+  }
+  updateHUD();
+
+  // Despawn current gates; queue next question/gates after a short beat.
+  gates = null;
+  transitioning = true;
+
+  // Check end conditions.
+  if (lives <= 0) { setTimeout(() => endGame(false), 350); return; }
+  if (answered >= TOTAL_QUESTIONS) { setTimeout(() => endGame(true), 350); return; }
+
+  currentIndex++;
+  showQuestion();
+  spawnCooldown = 0.55;
+  transitioning = false;
+}
+
+/* ---------------------------------------------------------------------
+   STEP 2 + 6: Update & render loop
+   --------------------------------------------------------------------- */
+function update(dt) {
+  // Player lateral movement.
+  const speed = 520;
+  if (keys.left)  player.targetX -= speed * dt;
+  if (keys.right) player.targetX += speed * dt;
+
+  const half = player.w / 2;
+  player.targetX = Math.max(half + 6, Math.min(W - half - 6, player.targetX));
+
+  const desiredX = player.targetX - half;
+  const dx = desiredX - player.x;
+  player.x += dx * Math.min(1, dt * 12);     // smooth lerp
+  player.tilt = Math.max(-0.4, Math.min(0.4, dx * 0.01));
+
+  // Scroll the water.
+  waterOffset = (waterOffset + SCROLL_SPEED * dt) % 80;
+
+  // Gate spawning.
+  if (!gates && !transitioning) {
+    spawnCooldown -= dt;
+    if (spawnCooldown <= 0) spawnGates();
+  }
+
+  // Move active gates downward toward the player.
+  if (gates) {
+    gates.y += SCROLL_SPEED * dt;
+
+    // AABB collision test against player.
+    const pTop = player.y, pBot = player.y + player.h;
+    const gTop = gates.y, gBot = gates.y + gates.h;
+    if (gBot >= pTop && gTop <= pBot) {
+      resolveCollision();
+    } else if (gTop > H + 20) {
+      // Safety: row fully passed without resolve (shouldn't happen since it spans width).
+      resolveCollision();
+    }
+  }
+
+  // Flash decay.
+  if (flashTimer > 0) {
+    flashTimer -= dt;
+    if (flashTimer <= 0) el.flash.className = "";
+  }
+}
+
+/* ---------- Rendering helpers ---------- */
+function drawWater() {
+  // Vertical gradient sea.
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, "#0a3d62");
+  grad.addColorStop(0.5, "#0d6ab8");
+  grad.addColorStop(1, "#1583cf");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Scrolling foam stripes to sell the speed (move downward with the gates).
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = "#eaf6ff";
+  ctx.lineWidth = 3;
+  for (let y = -80 + waterOffset; y < H + 80; y += 80) {
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 40) {
+      const yy = y + Math.sin((x + waterOffset * 4) * 0.03) * 6;
+      if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Faint moving sparkle dots.
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = "#cdefff";
+  for (let i = 0; i < 26; i++) {
+    const sx = (i * 137.5) % W;
+    const sy = ((i * 93 + waterOffset * 3) % (H + 40)) - 20;
+    ctx.fillRect(sx, sy, 3, 3);
+  }
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapText(text, maxWidth, font) {
+  ctx.font = font;
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawGates() {
+  if (!gates) return;
+  const laneW = W / 3;
+
+  gates.list.forEach((g) => {
+    const x = g.x, y = gates.y, w = g.w, h = g.h;
+
+    // Buoy / island body.
+    ctx.save();
+    const gg = ctx.createLinearGradient(0, y, 0, y + h);
+    gg.addColorStop(0, "#fff3d6");
+    gg.addColorStop(1, "#ffd98a");
+    ctx.fillStyle = gg;
+    ctx.strokeStyle = "rgba(4,41,63,0.55)";
+    ctx.lineWidth = 4;
+    roundRect(x, y, w, h, 18);
+    ctx.fill();
+    ctx.stroke();
+
+    // Little sand/island top accent.
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    roundRect(x + 10, y + 8, w - 20, 10, 6);
+    ctx.fill();
+
+    // Option text (wrapped, centred).
+    ctx.fillStyle = "#07324d";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const fontSize = Math.max(14, Math.min(22, w * 0.11));
+    const font = "700 " + fontSize + "px 'Segoe UI', system-ui, sans-serif";
+    const lines = wrapText(g.text, w - 24, font);
+    ctx.font = font;
+    const lh = fontSize * 1.18;
+    const startY = y + h / 2 - (lines.length - 1) * lh / 2;
+    lines.forEach((ln, i) => ctx.fillText(ln, x + w / 2, startY + i * lh));
+    ctx.restore();
+  });
+
+  // Lane divider hints (subtle).
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  for (let i = 1; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * laneW, 0);
+    ctx.lineTo(i * laneW, H);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const cx = player.x + player.w / 2;
+  const cy = player.y + player.h / 2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(player.tilt);
+
+  // Wake trail.
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = "#eaf6ff";
+  ctx.beginPath();
+  ctx.moveTo(-14, player.h / 2);
+  ctx.quadraticCurveTo(0, player.h / 2 + 46, 14, player.h / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Surfboard.
+  ctx.fillStyle = "#ff6b6b";
+  roundRect(-16, -player.h / 2, 32, player.h, 16);
+  ctx.fill();
+  ctx.fillStyle = "#ffd166";
+  roundRect(-6, -player.h / 2 + 8, 12, player.h - 16, 6);
+  ctx.fill();
+
+  // Surfer body (simple).
+  ctx.fillStyle = "#1b3a4b";
+  ctx.beginPath();
+  ctx.ellipse(0, -2, 13, 18, 0, 0, Math.PI * 2);  // torso
+  ctx.fill();
+  ctx.fillStyle = "#f6c89f";
+  ctx.beginPath();
+  ctx.arc(0, -22, 9, 0, Math.PI * 2);              // head
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function render() {
+  drawWater();
+  drawGates();
+  drawPlayer();
+}
+
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  if (gameState === STATE.PLAY) {
+    update(dt);
+    render();
+    rafId = requestAnimationFrame(loop);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Button wiring
+   --------------------------------------------------------------------- */
+el.startBtn.addEventListener("click", startGame);
+el.againBtn.addEventListener("click", () => {
+  el.end.classList.add("hidden");
+  el.menu.classList.remove("hidden");
+  gameState = STATE.MENU;
+});
+
+/* ---------------------------------------------------------------------
+   Init
+   --------------------------------------------------------------------- */
+populateGrades();
+populateTopics();
+</script>
+<script>
+/* EducAlvator: auto-assign the student's grade from ?grade=N and hide the grade selector. */
+(function lockGrade(){
+  function apply(){
+    var p = new URLSearchParams(location.search);
+    var g = p.get("grade");
+    if(!g) return;
+    var sel = document.getElementById("grade-select");
+    if(!sel || !sel.options.length) return;
+    var val = "grade_" + g;
+    var ok = Array.prototype.some.call(sel.options, function(o){ return o.value === val; });
+    if(!ok) return;
+    sel.value = val;
+    sel.dispatchEvent(new Event("change"));
+    sel.style.display = "none";
+    var lab = document.querySelector('label[for="grade-select"]');
+    if(lab) lab.style.display = "none";
+  }
+  if(document.readyState === "complete") setTimeout(apply, 0);
+  else window.addEventListener("load", function(){ setTimeout(apply, 0); });
+})();
+</script>
+<script src="/games/chapter-topics.js"></script>
+<script src="/games/ai-questions.js"></script>
+<script>
+/* EducAlvator: AI-generated questions for the chosen grade (see ai-questions.js).
+   Play Again returns to the menu here, so Start is the only button that begins a round. */
+(function(){
+  try{
+    var g=new URLSearchParams(location.search).get("grade");
+    if(!CURRICULUM["grade_"+g]) return;
+    var gradeObj=CURRICULUM["grade_"+g]=Object.assign({},CURRICULUM["grade_"+g]);
+    var sel=document.getElementById("topic-select");
+    var builtIn=Object.keys(gradeObj);
+    // Textbook chapters as extra topics; until the AI set arrives they fall back to this grade's built-in questions.
+    var fallback=[];
+    builtIn.forEach(function(k){ fallback=fallback.concat(gradeObj[k]); });
+    var chapters=window.EduChapters?EduChapters.addTo(g,"science",function(k,title){ gradeObj[k]=fallback.slice(); TOPIC_LABELS[k]=title; }):[];
+    // Textbook chapters are the only topics where the grade has them.
+    if(chapters.length) builtIn.forEach(function(k){ delete gradeObj[k]; });
+    EduAI.attach({
+      subject:"science", grade:g,
+      keys:chapters.length?chapters.slice(0,1):builtIn, // other chapters are fetched when chosen
+      label:function(k){ return (window.EduChapters&&EduChapters.aiLabel(k))||String(k).replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); },
+      apply:function(k,qs){ gradeObj[k]=qs; },
+      selected:function(){ return sel.value==="__all__"?builtIn:(gradeObj[sel.value]?[sel.value]:[]); },
+      buttons:["start-btn"]
+    });
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

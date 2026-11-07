@@ -1,0 +1,226 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode (toggled on <html class="dark">) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   Design tokens — values from the EducAlvator dashboard design:
+   warm paper background, white panels, dark #1C1917 sidebar/widgets,
+   #E05D43 accent and one pastel per subject.
+   ============================================================ */
+:root {
+  --bg: #fdfbf7;
+  --bg-soft: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #fdfbf7;
+  --ink: #111827;
+  --muted: #6b7280;
+  --faint: #9ca3af;
+  --line: #f3f4f6;
+  --line-strong: #e5e7eb;
+  --accent: #e05d43;
+  --accent-deep: #c95138;
+  --accent-tint: #fff4ed;
+  --sidebar: #1c1917;
+  --pastel-orange: #fff4ed;
+  --pastel-purple: #f0edf6;
+  --pastel-teal: #e9f3f1;
+  --thumb: #d6d3d1;
+
+  /* Back-compat aliases so existing class names keep working. */
+  --peach: var(--accent-tint);
+  --peach-soft: var(--surface-2);
+  --rust: var(--accent);
+  --rust-deep: var(--accent-deep);
+  --rust-soft: var(--accent-tint);
+  --yellow: var(--accent);
+  --coral: var(--accent);
+  --green: var(--accent);
+  --blue: var(--accent);
+  --shadow: none;
+}
+
+.dark {
+  --bg: #12100e;
+  --bg-soft: #292524;
+  --surface: #1c1917;
+  --surface-2: #231f1c;
+  --ink: #f5f5f4;
+  --muted: #a8a29e;
+  --faint: #78716c;
+  --line: #2e2a27;
+  --line-strong: #44403c;
+  --accent: #e05d43;
+  --accent-deep: #c95138;
+  --accent-tint: #3a2318;
+  --sidebar: #1c1917;
+  --pastel-orange: #2f211a;
+  --pastel-purple: #26222f;
+  --pastel-teal: #1b2a27;
+  --thumb: #44403c;
+
+  --peach: var(--accent-tint);
+  --peach-soft: var(--surface-2);
+  --rust: var(--accent);
+  --rust-deep: var(--accent-deep);
+  --rust-soft: var(--accent-tint);
+  --yellow: var(--accent);
+  --coral: var(--accent);
+  --green: var(--accent);
+  --blue: var(--accent);
+  --shadow: none;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-peach: var(--peach);
+  --color-peach-soft: var(--peach-soft);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-tint: var(--accent-tint);
+  --color-sidebar: var(--sidebar);
+  --color-pastel-orange: var(--pastel-orange);
+  --color-pastel-purple: var(--pastel-purple);
+  --color-pastel-teal: var(--pastel-teal);
+  --color-rust: var(--accent);
+  --color-rust-deep: var(--accent-deep);
+  --color-rust-soft: var(--accent-tint);
+  --color-yellow: var(--accent);
+  --color-coral: var(--accent);
+  --color-green: var(--accent);
+  --color-blue: var(--accent);
+
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
+
+  --radius-lg: 0.75rem;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* Big page heading ("Salut, Aarav!" in the design) */
+.page-title {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+@media (min-width: 1024px) {
+  .page-title { font-size: 3rem; }
+}
+
+/* Small label above a heading */
+.eyebrow {
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--faint);
+}
+
+/* White panel */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+/* Minimal scrollbar */
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-thumb { background: var(--thumb); border-radius: 6px; }
+
+/* ============================================================
+   Chat Markdown — structured AI replies rendered by react-markdown.
+   Tight, readable spacing inside a chat bubble; themed with the
+   palette vars so it works in light and dark.
+   ============================================================ */
+.md-body > :first-child { margin-top: 0; }
+.md-body > :last-child { margin-bottom: 0; }
+.md-body p { margin: 0 0 0.6em; line-height: 1.5; }
+.md-body h1, .md-body h2, .md-body h3, .md-body h4 {
+  margin: 0.8em 0 0.4em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.md-body h1 { font-size: 1.15rem; }
+.md-body h2 { font-size: 1.05rem; }
+.md-body h3, .md-body h4 { font-size: 0.95rem; }
+.md-body ul, .md-body ol { margin: 0.3em 0 0.7em; padding-left: 1.4em; }
+.md-body ul { list-style: disc; }      /* bullets render as dots */
+.md-body ol { list-style: decimal; }
+.md-body li { margin: 0.2em 0; line-height: 1.5; }
+.md-body li::marker { color: var(--accent); }
+.md-body strong { font-weight: 700; }
+.md-body a { color: var(--accent); text-decoration: underline; }
+.md-body blockquote {
+  margin: 0.5em 0;
+  padding-left: 0.8em;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+}
+/* Inline code */
+.md-body code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.08em 0.35em;
+}
+/* Code box — distinct background, padding, scrolls horizontally */
+.md-body pre {
+  margin: 0.6em 0;
+  padding: 0.8em 0.9em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.md-body pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+/* Code box with its "Copy code" button underneath */
+.md-body .md-code { margin: 0.6em 0; }
+.md-body .md-code pre { margin: 0 0 0.2em; }
+/* Tables (from remark-gfm) */
+.md-body table { border-collapse: collapse; margin: 0.5em 0; font-size: 0.85em; }
+.md-body th, .md-body td { border: 1px solid var(--line); padding: 0.35em 0.6em; text-align: left; }
+.md-body th { background: var(--bg-soft); font-weight: 600; }

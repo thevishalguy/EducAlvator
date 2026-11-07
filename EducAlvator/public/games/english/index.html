@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EduJumper — Gamified English Learning</title>
+<style>
+  :root {
+    --accent: #ffcf33;
+    --good: #35d07f;
+    --bad: #ff4d5e;
+    --panel: rgba(16, 22, 40, 0.92);
+    --panel-soft: rgba(28, 36, 62, 0.85);
+    --text: #f3f6ff;
+    --muted: #9fb0d8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #0a0e1a;
+    color: var(--text);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #game-container { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  /* ---------- Shared overlay styling ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 20;
+    background: radial-gradient(circle at 50% 30%, rgba(30, 44, 90, 0.75), rgba(6, 9, 20, 0.95));
+    backdrop-filter: blur(4px);
+  }
+  .overlay.hidden { display: none; }
+
+  .panel {
+    width: min(540px, 94vw);
+    max-height: 92vh;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid rgba(120, 150, 220, 0.25);
+    border-radius: 20px;
+    padding: 30px 32px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  }
+
+  .logo {
+    font-size: 40px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--accent), #ff8a3d);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 4px;
+  }
+  .tagline { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .field { text-align: left; margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(120, 150, 220, 0.35);
+    background: var(--panel-soft);
+    color: var(--text);
+    cursor: pointer;
+    appearance: none;
+  }
+  select:focus { outline: 2px solid var(--accent); }
+
+  .btn {
+    display: inline-block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.12s ease, filter 0.12s ease;
+    background: linear-gradient(90deg, var(--accent), #ff9a3d);
+    color: #20160a;
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+  .btn.secondary {
+    background: var(--panel-soft);
+    color: var(--text);
+    border: 1px solid rgba(120, 150, 220, 0.35);
+  }
+
+  .controls-hint {
+    margin-top: 20px;
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.7;
+    border-top: 1px solid rgba(120, 150, 220, 0.18);
+    padding-top: 16px;
+  }
+  .controls-hint b { color: var(--accent); }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+  #hud.hidden { display: none; }
+
+  #score-box {
+    position: absolute;
+    top: 16px;
+    left: 18px;
+    background: var(--panel);
+    border: 1px solid rgba(120, 150, 220, 0.25);
+    border-radius: 14px;
+    padding: 10px 18px;
+    font-size: 22px;
+    font-weight: 800;
+  }
+  #score-box span { color: var(--accent); }
+  #score-box small {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #lives-box {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    font-size: 30px;
+    letter-spacing: 2px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+
+  #question-box {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(620px, 72vw);
+    background: var(--panel);
+    border: 1px solid rgba(255, 207, 51, 0.4);
+    border-radius: 16px;
+    padding: 14px 20px;
+    text-align: center;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.4);
+  }
+  #question-topic {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  #question-text { font-size: 19px; font-weight: 700; line-height: 1.3; }
+
+  #flash {
+    position: fixed; inset: 0; z-index: 15;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  #flash.red { background: rgba(255, 60, 80, 0.45); opacity: 1; }
+  #flash.green { background: rgba(53, 208, 127, 0.35); opacity: 1; }
+
+  #big-score { font-size: 46px; font-weight: 900; color: var(--accent); margin: 6px 0 2px; }
+  .stat-row { display: flex; gap: 14px; justify-content: center; margin: 14px 0 6px; }
+  .stat {
+    flex: 1; background: var(--panel-soft); border-radius: 12px; padding: 12px 8px;
+  }
+  .stat b { display: block; font-size: 26px; }
+  .stat small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+
+  #pause-tip {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: var(--muted); background: var(--panel);
+    padding: 6px 14px; border-radius: 10px;
+  }
+  @media (max-width: 560px) {
+    #question-text { font-size: 15px; }
+    #score-box { font-size: 18px; }
+    #lives-box { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div id="game-container"></div>
+
+<!-- Flash feedback -->
+<div id="flash"></div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="score-box"><small>Score</small><span id="score">0</span></div>
+  <div id="lives-box">❤️ ❤️ ❤️</div>
+  <div id="question-box">
+    <div id="question-topic">Topic</div>
+    <div id="question-text">Loading question…</div>
+  </div>
+  <div id="pause-tip">◀ ▶ switch lane &nbsp;•&nbsp; ▲ jump &nbsp;•&nbsp; ▼ roll &nbsp;•&nbsp; P pause</div>
+</div>
+
+<!-- Main menu -->
+<div id="menu" class="overlay">
+  <div class="panel">
+    <div class="logo">🦘 EduJumper</div>
+    <div class="tagline">Run, dodge, and answer your way through English grammar!</div>
+    <div class="field">
+      <label for="grade-select">Select Grade</label>
+      <select id="grade-select"></select>
+    </div>
+    <div class="field">
+      <label for="topic-select">Select Topic</label>
+      <select id="topic-select"></select>
+    </div>
+    <button class="btn" id="start-btn">▶ START RUN</button>
+    <div class="controls-hint">
+      <b>◀ / ▶</b> move between lanes &nbsp; <b>▲</b> jump over low barriers<br>
+      <b>▼</b> roll under high barriers &nbsp; <b>P</b> pause<br>
+      Steer into the <b>gate with the correct answer</b> to score. Wrong gates &amp; obstacles cost a life!
+    </div>
+  </div>
+</div>
+
+<!-- Game over -->
+<div id="gameover" class="overlay hidden">
+  <div class="panel">
+    <div class="logo" style="font-size:34px">Game Over</div>
+    <div id="big-score">0</div>
+    <div class="tagline" style="margin-bottom:0">points</div>
+    <div class="stat-row">
+      <div class="stat"><b id="go-correct" style="color:var(--good)">0</b><small>Correct</small></div>
+      <div class="stat"><b id="go-wrong" style="color:var(--bad)">0</b><small>Wrong</small></div>
+      <div class="stat"><b id="go-best" style="color:var(--accent)">0</b><small>Best</small></div>
+    </div>
+    <button class="btn" id="retry-btn">↻ TRY AGAIN</button>
+    <button class="btn secondary" id="change-btn">⚙ CHANGE TOPIC</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =======================================================================
+   EduJumper — Gamified English Learning
+   Single-file endless runner mapped to grammar Q&A (Three.js r128)
+   ======================================================================= */
+
+/* ---------------------------------------------------------------------
+   STEP 4 (data): Dynamic Curriculum System
+   Topics are authored once per grade-group, then expanded to grades.
+   Each question: { q, options: [...], correctIndex }
+--------------------------------------------------------------------- */
+const TOPIC_LABELS = {
+  nouns: "Nouns", verbs: "Verbs", prepositions: "Prepositions", sight_words: "Sight Words",
+  simple_continuous_tenses: "Simple / Continuous Tenses", subject_verb_agreement: "Subject–Verb Agreement",
+  synonyms: "Synonyms", perfect_tenses: "Perfect Tenses", modals: "Modals", adverbs: "Adverbs",
+  active_passive: "Active / Passive Voice", direct_indirect: "Direct / Indirect Speech",
+  clauses: "Clauses", conditionals: "Conditionals", advanced_modals: "Advanced Modals",
+  subject_verb_concord: "Subject–Verb Concord", determiners: "Determiners",
+  sentence_transformation: "Sentence Transformation"
+};
+
+/* Content blocks shared across grade groups */
+const GROUP_CONTENT = {
+  g1_2: {
+    nouns: [
+      { q: "Which word is a naming word (noun)?", options: ["dog", "run", "quickly"], correctIndex: 0 },
+      { q: "Pick the noun: The ___ is red.", options: ["apple", "jump", "happy"], correctIndex: 0 },
+      { q: "Which one names a place?", options: ["school", "sing", "blue"], correctIndex: 0 },
+      { q: "Choose the noun.", options: ["teacher", "eat", "slowly"], correctIndex: 0 }
+    ],
+    verbs: [
+      { q: "Which word is an action (verb)?", options: ["jump", "table", "red"], correctIndex: 0 },
+      { q: "Pick the verb: Birds ___ in the sky.", options: ["fly", "nest", "small"], correctIndex: 0 },
+      { q: "Choose the action word.", options: ["swim", "water", "cold"], correctIndex: 0 },
+      { q: "Which one is a doing word?", options: ["read", "book", "happy"], correctIndex: 0 }
+    ],
+    prepositions: [
+      { q: "The cat is ___ the box.", options: ["in", "run", "cat"], correctIndex: 0 },
+      { q: "The ball is ___ the table.", options: ["on", "eat", "big"], correctIndex: 0 },
+      { q: "The bird sits ___ the tree.", options: ["under", "sing", "green"], correctIndex: 0 },
+      { q: "We walk ___ the park.", options: ["to", "fast", "dog"], correctIndex: 0 }
+    ],
+    sight_words: [
+      { q: "Choose the correct spelling.", options: ["the", "teh", "hte"], correctIndex: 0 },
+      { q: "Pick the sight word.", options: ["said", "sed", "sayd"], correctIndex: 0 },
+      { q: "Which is spelled right?", options: ["because", "becuz", "becoz"], correctIndex: 0 },
+      { q: "Choose the correct word.", options: ["friend", "frend", "freind"], correctIndex: 0 }
+    ]
+  },
+  g3_4: {
+    simple_continuous_tenses: [
+      { q: "I ___ to school every day.", options: ["go", "goes", "going"], correctIndex: 0 },
+      { q: "She ___ reading a book now.", options: ["is", "are", "am"], correctIndex: 0 },
+      { q: "They ___ football yesterday.", options: ["played", "play", "plays"], correctIndex: 0 },
+      { q: "We ___ watching TV right now.", options: ["are", "is", "am"], correctIndex: 0 }
+    ],
+    subject_verb_agreement: [
+      { q: "He ___ a fast car.", options: ["has", "have", "haves"], correctIndex: 0 },
+      { q: "The dogs ___ loudly.", options: ["bark", "barks", "barking"], correctIndex: 0 },
+      { q: "She ___ to music.", options: ["listens", "listen", "listening"], correctIndex: 0 },
+      { q: "My friends ___ happy.", options: ["are", "is", "am"], correctIndex: 0 }
+    ],
+    synonyms: [
+      { q: "Synonym of 'happy'?", options: ["glad", "sad", "angry"], correctIndex: 0 },
+      { q: "Synonym of 'big'?", options: ["large", "tiny", "thin"], correctIndex: 0 },
+      { q: "Synonym of 'fast'?", options: ["quick", "slow", "late"], correctIndex: 0 },
+      { q: "Synonym of 'begin'?", options: ["start", "stop", "end"], correctIndex: 0 }
+    ]
+  },
+  g5: {
+    perfect_tenses: [
+      { q: "I have ___ my homework.", options: ["finished", "finish", "finishing"], correctIndex: 0 },
+      { q: "She has ___ to London.", options: ["gone", "go", "went"], correctIndex: 0 },
+      { q: "They had ___ before we arrived.", options: ["eaten", "eat", "ate"], correctIndex: 0 },
+      { q: "We have ___ this film already.", options: ["seen", "saw", "see"], correctIndex: 0 }
+    ],
+    modals: [
+      { q: "You ___ finish your work on time.", options: ["must", "musts", "musting"], correctIndex: 0 },
+      { q: "___ I borrow your pen, please?", options: ["May", "Must", "Did"], correctIndex: 0 },
+      { q: "She ___ swim very well.", options: ["can", "cans", "could to"], correctIndex: 0 },
+      { q: "It ___ rain later, so take an umbrella.", options: ["might", "mights", "musting"], correctIndex: 0 }
+    ],
+    adverbs: [
+      { q: "He ran ___ to catch the bus.", options: ["quickly", "quick", "quicker than"], correctIndex: 0 },
+      { q: "She sings ___.", options: ["beautifully", "beautiful", "beauty"], correctIndex: 0 },
+      { q: "The turtle moves ___.", options: ["slowly", "slow", "slowness"], correctIndex: 0 },
+      { q: "They waited ___.", options: ["patiently", "patient", "patience"], correctIndex: 0 }
+    ]
+  },
+  g6_8: {
+    active_passive: [
+      { q: "Passive: 'The chef cooks the meal.'", options: ["The meal is cooked by the chef.", "The meal cooks the chef.", "The chef is cooked."], correctIndex: 0 },
+      { q: "Passive: 'They built a house.'", options: ["A house was built by them.", "A house built them.", "They were built."], correctIndex: 0 },
+      { q: "Active: 'The letter was written by Sam.'", options: ["Sam wrote the letter.", "The letter wrote Sam.", "Sam is writing."], correctIndex: 0 },
+      { q: "Passive: 'She sings a song.'", options: ["A song is sung by her.", "A song sings her.", "She is sung."], correctIndex: 0 }
+    ],
+    direct_indirect: [
+      { q: "Indirect: He said, \"I am tired.\"", options: ["He said that he was tired.", "He said that I am tired.", "He says he is tired."], correctIndex: 0 },
+      { q: "Indirect: She said, \"I will come.\"", options: ["She said that she would come.", "She said that she will come.", "She said I would come."], correctIndex: 0 },
+      { q: "Direct form of: He told me that he was busy.", options: ["He said, \"I am busy.\"", "He said, \"He is busy.\"", "He said, \"I was busy.\""], correctIndex: 0 },
+      { q: "Indirect: \"Where are you?\" she asked.", options: ["She asked where I was.", "She asked where are you.", "She asked where I am."], correctIndex: 0 }
+    ],
+    clauses: [
+      { q: "Identify the dependent clause.", options: ["because it was raining", "the sky is blue", "I ran fast"], correctIndex: 0 },
+      { q: "Which is an independent clause?", options: ["She smiled.", "when he arrived", "although it was late"], correctIndex: 0 },
+      { q: "The relative clause is:", options: ["who lives next door", "a tall man", "very quickly"], correctIndex: 0 },
+      { q: "Which word begins a subordinate clause?", options: ["although", "and", "but"], correctIndex: 0 }
+    ],
+    conditionals: [
+      { q: "If it rains, we ___ stay home.", options: ["will", "would have", "are"], correctIndex: 0 },
+      { q: "If I ___ rich, I would travel.", options: ["were", "am", "will be"], correctIndex: 0 },
+      { q: "If you heat ice, it ___.", options: ["melts", "melted", "will melt"], correctIndex: 0 },
+      { q: "If she had studied, she ___ passed.", options: ["would have", "will have", "has"], correctIndex: 0 }
+    ]
+  },
+  g9_10: {
+    advanced_modals: [
+      { q: "You ___ have told me earlier! (regret)", options: ["should", "will", "can"], correctIndex: 0 },
+      { q: "He ___ have missed the train; he's late.", options: ["must", "can", "shall"], correctIndex: 0 },
+      { q: "They ___ have finished by now. (possibility)", options: ["may", "shall", "ought"], correctIndex: 0 },
+      { q: "You ___ not have spent so much money.", options: ["need", "will", "can"], correctIndex: 0 }
+    ],
+    subject_verb_concord: [
+      { q: "Neither the principal nor the teachers ___ present.", options: ["were", "was", "is"], correctIndex: 0 },
+      { q: "Each of the boys ___ a prize.", options: ["has", "have", "are having"], correctIndex: 0 },
+      { q: "The news ___ good today.", options: ["is", "are", "were"], correctIndex: 0 },
+      { q: "Mathematics ___ my favourite subject.", options: ["is", "are", "were"], correctIndex: 0 }
+    ],
+    determiners: [
+      { q: "I have ___ money left.", options: ["little", "few", "many"], correctIndex: 0 },
+      { q: "There are ___ apples in the basket.", options: ["few", "little", "much"], correctIndex: 0 },
+      { q: "___ information was useful.", options: ["Much", "Many", "A number of"], correctIndex: 0 },
+      { q: "She bought ___ bread.", options: ["some", "a", "several"], correctIndex: 0 }
+    ],
+    sentence_transformation: [
+      { q: "Exclamatory of: 'It is a very beautiful day.'", options: ["What a beautiful day it is!", "How day is beautiful!", "It is beautiful day!"], correctIndex: 0 },
+      { q: "Negative of: 'She is very kind.'", options: ["She is not unkind.", "She is not kind never.", "She isn't very."], correctIndex: 0 },
+      { q: "Comparative of: 'No other city is as busy as Tokyo.'", options: ["Tokyo is busier than most other cities.", "Tokyo is the busy city.", "Tokyo busier all cities."], correctIndex: 0 },
+      { q: "Make complex: 'He is poor but honest.'", options: ["Though he is poor, he is honest.", "He is poor and honest.", "He is poor so honest."], correctIndex: 0 }
+    ]
+  }
+};
+
+/* Expand group content into grade_1 … grade_10 */
+const GRADE_GROUP = {
+  grade_1: "g1_2", grade_2: "g1_2",
+  grade_3: "g3_4", grade_4: "g3_4",
+  grade_5: "g5",
+  grade_6: "g6_8", grade_7: "g6_8", grade_8: "g6_8",
+  grade_9: "g9_10", grade_10: "g9_10"
+};
+const CURRICULUM = {};
+for (const grade in GRADE_GROUP) CURRICULUM[grade] = GROUP_CONTENT[GRADE_GROUP[grade]];
+
+/* ---------------------------------------------------------------------
+   Global game state
+--------------------------------------------------------------------- */
+const STATE = { MENU: "menu", PLAY: "play", GAMEOVER: "gameover", PAUSED: "paused" };
+
+const game = {
+  state: STATE.MENU,
+  score: 0,
+  lives: 3,
+  correctCount: 0,
+  wrongCount: 0,
+  best: 0,
+  speed: 9,           // world units / second (slower: about 8s to read and pick a gate)
+  baseSpeed: 9,
+  grade: "grade_5",
+  topic: "all",
+  questionPool: [],   // flattened pool for the selection
+  currentQuestion: null,
+  invuln: 0           // seconds of invulnerability after a hit
+};
+
+const LANE_X = [-2.4, 0, 2.4];   // 3-lane grid
+const GATE_Y = 2.7;              // answer gates float up here so they stay in view
+const PLAYER_Z = 4;              // player's fixed z position
+const SPAWN_Z = -70;             // objects spawn here and move toward +z
+const DESPAWN_Z = 10;
+const TUNED_SPEED = 14;           // obstacle gaps and hit windows were balanced at this speed
+
+/* ---------------------------------------------------------------------
+   STEP 2: Three.js engine setup
+--------------------------------------------------------------------- */
+let scene, camera, renderer, clock;
+let player, playerLane = 1;
+let playerTargetX = 0, playerVelY = 0, isJumping = false, isRolling = false, rollTimer = 0;
+const floorTiles = [];
+const obstacles = [];      // { mesh, lane, type }
+let gateSet = null;        // { group, gates:[{mesh,lane,correct,label}], resolved }
+let gateCooldown = 0;      // seconds until next gate set may spawn
+let obstacleTimer = 0;
+
+const container = document.getElementById("game-container");
+
+function initEngine() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1026);
+  scene.fog = new THREE.Fog(0x0b1026, 30, 72);
+
+  camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(0, 6.2, 11);
+  camera.lookAt(0, 1.2, -14);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+
+  // Lighting
+  const ambient = new THREE.AmbientLight(0x9fb4ff, 0.75);
+  scene.add(ambient);
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  sun.position.set(8, 20, 6);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.left = -20; sun.shadow.camera.right = 20;
+  sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -20;
+  scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0x88aaff, 0x202040, 0.4));
+
+  buildTrack();
+  buildPlayer();
+
+  clock = new THREE.Clock();
+  window.addEventListener("resize", onResize);
+  animate();
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+/* Moving floor built from repeating tiles for an endless effect */
+const TILE_LEN = 20;
+function buildTrack() {
+  const tileGeo = new THREE.BoxGeometry(10, 0.5, TILE_LEN);
+  for (let i = 0; i < 6; i++) {
+    const mat = new THREE.MeshStandardMaterial({ color: i % 2 ? 0x2a3357 : 0x232b49, roughness: 0.95 });
+    const tile = new THREE.Mesh(tileGeo, mat);
+    tile.position.set(0, -0.25, PLAYER_Z - i * TILE_LEN);
+    tile.receiveShadow = true;
+    scene.add(tile);
+    floorTiles.push(tile);
+
+    // rail lines between lanes
+    [-1.2, 1.2].forEach(x => {
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.08, TILE_LEN),
+        new THREE.MeshStandardMaterial({ color: 0x5c6aa0, emissive: 0x1a2140, emissiveIntensity: 0.4 })
+      );
+      rail.position.set(x, 0.05, tile.position.z);
+      scene.add(rail);
+      floorTiles.push(rail);
+      rail.userData.rail = true;
+    });
+  }
+  // side walls / scenery posts
+  for (let i = 0; i < 20; i++) {
+    [-5.2, 5.2].forEach(x => {
+      const post = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, 4, 0.4),
+        new THREE.MeshStandardMaterial({ color: 0x33407a })
+      );
+      post.position.set(x, 2, PLAYER_Z - i * 7);
+      post.userData.post = true;
+      scene.add(post);
+      floorTiles.push(post);
+    });
+  }
+}
+
+/* STEP 2/3: student avatar (simple geometric figure) */
+function buildPlayer() {
+  player = new THREE.Group();
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcf33, roughness: 0.5 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.52, 1.3, 16), bodyMat);
+  body.position.y = 0.85; body.castShadow = true; body.name = "body";
+  player.add(body);
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.38, 16, 16),
+    new THREE.MeshStandardMaterial({ color: 0xffe0b0, roughness: 0.6 })
+  );
+  head.position.y = 1.85; head.castShadow = true; head.name = "head";
+  player.add(head);
+
+  // little backpack so it reads as a student
+  const pack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.7, 0.3),
+    new THREE.MeshStandardMaterial({ color: 0xff5e7a })
+  );
+  pack.position.set(0, 1.0, 0.42); pack.castShadow = true; pack.name = "pack";
+  player.add(pack);
+
+  player.position.set(LANE_X[playerLane], 0, PLAYER_Z);
+  scene.add(player);
+}
+
+/* ---------------------------------------------------------------------
+   Text texture helper (STEP 5: text rendering on gates via CanvasTexture)
+--------------------------------------------------------------------- */
+function makeTextTexture(text) {
+  const c = document.createElement("canvas");
+  c.width = 600; c.height = 390;
+  const ctx = c.getContext("2d");
+  // card background
+  ctx.fillStyle = "#223a6b";
+  roundRect(ctx, 14, 14, c.width - 28, c.height - 28, 38);
+  ctx.fill();
+  // static glowing border
+  ctx.lineWidth = 14;
+  ctx.strokeStyle = "#8fd6ff";
+  ctx.shadowColor = "#6fb8ff";
+  ctx.shadowBlur = 26;
+  roundRect(ctx, 14, 14, c.width - 28, c.height - 28, 38);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  // text (wrapped, enlarged)
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 88px 'Trebuchet MS', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  wrapText(ctx, text, c.width / 2, c.height / 2, c.width - 72, 94);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 8;
+  return tex;
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function wrapText(ctx, text, x, y, maxW, lh) {
+  const words = String(text).split(" ");
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+    else line = test;
+  }
+  lines.push(line);
+  const startY = y - ((lines.length - 1) * lh) / 2;
+  lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lh));
+}
+
+/* ---------------------------------------------------------------------
+   STEP 4: Question pool filtering & selection
+--------------------------------------------------------------------- */
+function buildQuestionPool() {
+  const gradeData = CURRICULUM[game.grade] || {};
+  game.questionPool = [];
+  if (game.topic === "all") {
+    for (const t in gradeData) {
+      if (window.EduChapters && EduChapters.isChapter(t)) continue; // "All topics" mixes the built-in topics
+      gradeData[t].forEach(q => game.questionPool.push({ ...q, topic: t }));
+    }
+  } else if (gradeData[game.topic]) {
+    gradeData[game.topic].forEach(q => game.questionPool.push({ ...q, topic: game.topic }));
+  }
+  if (game.questionPool.length === 0) {
+    game.questionPool.push({ q: "No questions found — pick another topic.", options: ["OK", "OK", "OK"], correctIndex: 0, topic: "info" });
+  }
+}
+function pickQuestion() {
+  const pool = game.questionPool;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/* ---------------------------------------------------------------------
+   STEP 5: Spawner — answer gates + obstacles
+--------------------------------------------------------------------- */
+function spawnGateSet() {
+  const q = pickQuestion();
+  game.currentQuestion = q;
+
+  // Build options with correctness, then shuffle into lanes
+  const opts = q.options.map((text, i) => ({ text, correct: i === q.correctIndex }));
+  shuffle(opts);
+
+  const group = new THREE.Group();
+  const gates = [];
+  opts.forEach((opt, lane) => {
+    const tex = makeTextTexture(opt.text);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+    const gate = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 1.5), mat);
+    gate.position.set(LANE_X[lane], GATE_Y, 0);
+
+    // static glowing halo behind the card (no rotation — stays put)
+    const halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.55, 1.8),
+      new THREE.MeshBasicMaterial({
+        color: 0x4aa8ff, transparent: true, opacity: 0.3,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      })
+    );
+    halo.position.set(LANE_X[lane], GATE_Y, -0.06);
+
+    group.add(halo);
+    group.add(gate);
+    gates.push({ gate, frame: halo, lane, correct: opt.correct, text: opt.text });
+  });
+
+  group.position.z = SPAWN_Z;
+  scene.add(group);
+  gateSet = { group, gates, resolved: false };
+
+  // update HUD
+  document.getElementById("question-topic").textContent = TOPIC_LABELS[q.topic] || "Question";
+  document.getElementById("question-text").textContent = q.q;
+}
+
+const OBSTACLE_TYPES = ["jump", "roll", "block"]; // jump low barrier, roll high barrier, block=dodge lane
+function spawnObstacle() {
+  // --- Placement safety checks ---------------------------------------
+  // 1. Don't cluster: skip if another obstacle is still in the spawn zone.
+  for (const o of obstacles) {
+    if (o.mesh.position.z < SPAWN_Z + 16) return;
+  }
+  // 2. Don't drop an obstacle right on top of a freshly spawned gate set.
+  if (gateSet && gateSet.group.position.z < SPAWN_Z + 16) return;
+
+  // 3. Keep the correct-answer lane clear of impassable blocks so the
+  //    player always has a reachable path to the right answer.
+  let correctLane = -1;
+  if (gateSet) {
+    const cg = gateSet.gates.find(g => g.correct);
+    if (cg) correctLane = cg.lane;
+  }
+
+  const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
+  let lane = Math.floor(Math.random() * 3);
+  if (type === "block" && lane === correctLane) {
+    // shift the full block into one of the other two lanes
+    lane = (correctLane + 1 + Math.floor(Math.random() * 2)) % 3;
+  }
+  let mesh;
+
+  if (type === "jump") {
+    // low barrier
+    mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 0.7, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xff8c42 })
+    );
+    mesh.position.set(LANE_X[lane], 0.45, SPAWN_Z);
+  } else if (type === "roll") {
+    // high barrier with gap underneath → roll
+    mesh = new THREE.Group();
+    const bar = new THREE.Mesh(
+      new THREE.BoxGeometry(1.9, 0.6, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xff4d6d })
+    );
+    bar.position.y = 2.0;
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x9aa3c7 });
+    [-0.8, 0.8].forEach(x => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.8, 0.18), legMat);
+      leg.position.set(x, 1.0, 0);
+      mesh.add(leg);
+    });
+    mesh.add(bar);
+    mesh.position.set(LANE_X[lane], 0, SPAWN_Z);
+  } else {
+    // full block (stationary train car) → must switch lane
+    mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(2.0, 2.4, 3.2),
+      new THREE.MeshStandardMaterial({ color: 0x4a5fb0, metalness: 0.3, roughness: 0.6 })
+    );
+    mesh.position.set(LANE_X[lane], 1.2, SPAWN_Z);
+  }
+  mesh.traverse ? mesh.traverse(o => { if (o.isMesh) o.castShadow = true; }) : (mesh.castShadow = true);
+  scene.add(mesh);
+  obstacles.push({ mesh, lane, type });
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* ---------------------------------------------------------------------
+   STEP 3: Movement logic (lanes, jump, roll)
+--------------------------------------------------------------------- */
+function handleKey(e) {
+  if (game.state === STATE.PLAY) {
+    switch (e.key) {
+      case "ArrowLeft":  playerLane = Math.max(0, playerLane - 1); playerTargetX = LANE_X[playerLane]; break;
+      case "ArrowRight": playerLane = Math.min(2, playerLane + 1); playerTargetX = LANE_X[playerLane]; break;
+      case "ArrowUp":    doJump(); break;
+      case "ArrowDown":  doRoll(); break;
+      case "p": case "P": togglePause(); break;
+    }
+  } else if (game.state === STATE.PAUSED && (e.key === "p" || e.key === "P")) {
+    togglePause();
+  }
+}
+function doJump() {
+  if (!isJumping && !isRolling) { isJumping = true; playerVelY = 9.5; }
+}
+function doRoll() {
+  if (!isRolling && !isJumping) { isRolling = true; rollTimer = 0.6; }
+}
+function togglePause() {
+  if (game.state === STATE.PLAY) { game.state = STATE.PAUSED; document.getElementById("question-text").textContent = "⏸ Paused — press P to resume"; }
+  else if (game.state === STATE.PAUSED) { game.state = STATE.PLAY; if (game.currentQuestion) document.getElementById("question-text").textContent = game.currentQuestion.q; }
+}
+window.addEventListener("keydown", handleKey);
+
+/* ---------------------------------------------------------------------
+   STEP 6: Game loop, collision, scoring, state transitions
+--------------------------------------------------------------------- */
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  if (game.state === STATE.PLAY) {
+    updateWorld(dt);
+    updatePlayer(dt);
+    checkCollisions();
+    manageSpawns(dt);
+    // speed is constant (no difficulty ramp)
+    if (game.invuln > 0) game.invuln -= dt;
+  }
+  renderer.render(scene, camera);
+}
+
+function updateWorld(dt) {
+  const move = game.speed * dt;
+
+  // scroll floor tiles & scenery, recycling each type behind the camera
+  floorTiles.forEach(t => {
+    t.position.z += move;
+    if (t.userData.post) {
+      if (t.position.z > 14) t.position.z -= 20 * 7;        // 20 posts spaced 7 apart
+    } else if (t.position.z > PLAYER_Z + TILE_LEN) {
+      t.position.z -= TILE_LEN * 6;                          // 6 floor/rail tiles in the ring
+    }
+  });
+
+  // obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    obstacles[i].mesh.position.z += move;
+    if (obstacles[i].mesh.position.z > DESPAWN_Z) {
+      scene.remove(obstacles[i].mesh);
+      obstacles.splice(i, 1);
+    }
+  }
+
+  // gate set (static — glides forward only, no spin)
+  if (gateSet) {
+    gateSet.group.position.z += move;
+    if (gateSet.group.position.z > DESPAWN_Z) {
+      // passed without being resolved (player missed all lanes somehow) → treat as wrong-skip, just load next
+      scene.remove(gateSet.group);
+      if (!gateSet.resolved) { /* missed: no penalty, just continue */ }
+      gateSet = null;
+      gateCooldown = 0.2;
+      loadNextQuestion();
+    }
+  }
+}
+
+function updatePlayer(dt) {
+  // lateral lerp
+  player.position.x += (playerTargetX - player.position.x) * Math.min(1, dt * 12);
+
+  // jump (parabolic via gravity integration)
+  if (isJumping) {
+    player.position.y += playerVelY * dt;
+    playerVelY -= 26 * dt;
+    if (player.position.y <= 0) { player.position.y = 0; isJumping = false; playerVelY = 0; }
+  }
+
+  // roll (scale down on Y)
+  const body = player.getObjectByName("body");
+  const head = player.getObjectByName("head");
+  const pack = player.getObjectByName("pack");
+  if (isRolling) {
+    rollTimer -= dt;
+    player.scale.y = 0.5;
+    if (head) head.position.y = 1.3;
+    if (rollTimer <= 0) { isRolling = false; }
+  } else {
+    player.scale.y += (1 - player.scale.y) * Math.min(1, dt * 12);
+    if (head) head.position.y = 1.85;
+  }
+
+  // a little running bob
+  if (!isJumping && !isRolling) player.position.y = Math.abs(Math.sin(clock.elapsedTime * 10)) * 0.08;
+}
+
+/* Bounding-box collision detection */
+function checkCollisions() {
+  const playerZ = player.position.z;
+  const playerBox = new THREE.Box3().setFromObject(player);
+
+  // ---- Obstacles ----
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    const oz = o.mesh.position.z;
+    // Scaled so an obstacle overlaps the player for the same time at any speed (a jump stays clearable).
+    if (Math.abs(oz - playerZ) < 1.4 * (game.speed / TUNED_SPEED) && o.lane === playerLane) {
+      let cleared = false;
+      if (o.type === "jump" && player.position.y > 0.9) cleared = true;      // jumped over low barrier
+      else if (o.type === "roll" && isRolling) cleared = true;               // rolled under high barrier
+      // 'block' can only be avoided by not being in the lane → if here, it's a hit
+      if (!cleared && game.invuln <= 0) {
+        loseLife();
+        scene.remove(o.mesh);
+        obstacles.splice(i, 1);
+      }
+    }
+  }
+
+  // ---- Answer gates ----
+  if (gateSet && !gateSet.resolved) {
+    const gz = gateSet.group.position.z;
+    if (Math.abs(gz - playerZ) < 1.0) {
+      // Resolve using a local ref and clear gateSet BEFORE scoring, since a
+      // wrong answer can trigger endGame() which also nulls gateSet.
+      const set = gateSet;
+      const chosen = set.gates.find(g => g.lane === playerLane);
+      set.resolved = true;
+      scene.remove(set.group);
+      gateSet = null;
+      gateCooldown = 0.35;
+      if (chosen && chosen.correct) onCorrect();
+      else onWrong();
+      loadNextQuestion();
+    }
+  }
+}
+
+function manageSpawns(dt) {
+  // gates: keep one active at all times
+  if (!gateSet) {
+    gateCooldown -= dt;
+    if (gateCooldown <= 0) spawnGateSet();
+  }
+  // obstacles on a timer (spaced relative to speed)
+  obstacleTimer -= dt;
+  if (obstacleTimer <= 0) {
+    spawnObstacle();
+    obstacleTimer = (1.4 + Math.random() * 1.1) * (TUNED_SPEED / game.speed);
+  }
+}
+
+function loadNextQuestion() {
+  // next gate set spawns via manageSpawns after cooldown
+}
+
+/* ---- Scoring & lives ---- */
+function onCorrect() {
+  game.score += 100;
+  game.correctCount++;
+  updateScore();
+  flash("green");
+  beep(880, 0.12, "triangle");
+}
+function onWrong() {
+  game.wrongCount++;
+  flash("red");
+  beep(180, 0.2, "sawtooth");
+  loseLife();
+}
+function loseLife() {
+  game.lives--;
+  game.invuln = 1.0;
+  flash("red");
+  updateLives();
+  if (game.lives <= 0) endGame();
+}
+
+function updateScore() { document.getElementById("score").textContent = game.score; }
+function updateLives() {
+  const hearts = "❤️ ".repeat(Math.max(0, game.lives)) + "🤍 ".repeat(Math.max(0, 3 - game.lives));
+  document.getElementById("lives-box").textContent = hearts.trim();
+}
+
+/* Screen flash feedback */
+let flashTimeout;
+function flash(kind) {
+  const f = document.getElementById("flash");
+  f.className = kind;
+  clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(() => { f.className = ""; }, 160);
+}
+
+/* Simple WebAudio sound effects (no asset files needed) */
+let audioCtx;
+function beep(freq, dur, type) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.start();
+    o.stop(audioCtx.currentTime + dur);
+  } catch (e) { /* audio optional */ }
+}
+
+/* ---------------------------------------------------------------------
+   STEP 1: UI wiring & state machine transitions
+--------------------------------------------------------------------- */
+const el = {
+  menu: document.getElementById("menu"),
+  hud: document.getElementById("hud"),
+  gameover: document.getElementById("gameover"),
+  gradeSelect: document.getElementById("grade-select"),
+  topicSelect: document.getElementById("topic-select"),
+  startBtn: document.getElementById("start-btn"),
+  retryBtn: document.getElementById("retry-btn"),
+  changeBtn: document.getElementById("change-btn")
+};
+
+function populateGrades() {
+  for (let g = 1; g <= 10; g++) {
+    const opt = document.createElement("option");
+    opt.value = "grade_" + g;
+    opt.textContent = "Grade " + g;
+    el.gradeSelect.appendChild(opt);
+  }
+  el.gradeSelect.value = "grade_5";
+  populateTopics();
+}
+function populateTopics() {
+  const grade = el.gradeSelect.value;
+  const data = CURRICULUM[grade] || {};
+  el.topicSelect.innerHTML = "";
+  const all = document.createElement("option");
+  all.value = "all"; all.textContent = "🎲 All Topics (mixed)";
+  el.topicSelect.appendChild(all);
+  for (const t in data) {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = TOPIC_LABELS[t] || t;
+    el.topicSelect.appendChild(opt);
+  }
+  if (window.EduChapters) EduChapters.groupOptions(el.topicSelect);
+}
+el.gradeSelect.addEventListener("change", populateTopics);
+
+function startGame() {
+  game.grade = el.gradeSelect.value;
+  game.topic = el.topicSelect.value;
+  buildQuestionPool();
+
+  // reset state
+  game.state = STATE.PLAY;
+  game.score = 0; game.lives = 3; game.correctCount = 0; game.wrongCount = 0;
+  game.speed = game.baseSpeed; game.invuln = 0;
+  playerLane = 1; playerTargetX = LANE_X[1];
+  player.position.set(LANE_X[1], 0, PLAYER_Z);
+  player.scale.y = 1;
+  isJumping = isRolling = false; playerVelY = 0;
+
+  // clear any leftover objects
+  obstacles.forEach(o => scene.remove(o.mesh)); obstacles.length = 0;
+  if (gateSet) { scene.remove(gateSet.group); gateSet = null; }
+  gateCooldown = 0; obstacleTimer = 1.0;
+
+  updateScore(); updateLives();
+  el.menu.classList.add("hidden");
+  el.gameover.classList.add("hidden");
+  el.hud.classList.remove("hidden");
+
+  spawnGateSet();
+  // unlock audio on user gesture
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+}
+
+function endGame() {
+  game.state = STATE.GAMEOVER;
+  game.best = Math.max(game.best, game.score);
+  el.hud.classList.add("hidden");
+  el.gameover.classList.remove("hidden");
+  document.getElementById("big-score").textContent = game.score;
+  document.getElementById("go-correct").textContent = game.correctCount;
+  document.getElementById("go-wrong").textContent = game.wrongCount;
+  document.getElementById("go-best").textContent = game.best;
+  // clear field
+  obstacles.forEach(o => scene.remove(o.mesh)); obstacles.length = 0;
+  if (gateSet) { scene.remove(gateSet.group); gateSet = null; }
+  // Report the result to the host app (same-origin parent) to update XP/stats.
+  try {
+    var _total = game.correctCount + game.wrongCount;
+    var _acc = _total > 0 ? Math.round((game.correctCount / _total) * 100) : 0;
+    window.parent.postMessage({ type: "GAME_COMPLETE", game: "EduJumper", score: game.score, accuracy: _acc }, window.location.origin);
+  } catch (e) {}
+}
+
+el.startBtn.addEventListener("click", startGame);
+el.retryBtn.addEventListener("click", startGame);
+el.changeBtn.addEventListener("click", () => {
+  game.state = STATE.MENU;
+  el.gameover.classList.add("hidden");
+  el.menu.classList.remove("hidden");
+});
+
+/* ---------------------------------------------------------------------
+   Boot
+--------------------------------------------------------------------- */
+populateGrades();
+initEngine();
+</script>
+<script>
+/* EducAlvator: auto-assign the student's grade from ?grade=N and hide the grade selector. */
+(function lockGrade(){
+  function apply(){
+    var p = new URLSearchParams(location.search);
+    var g = p.get("grade");
+    if(!g) return;
+    var sel = document.getElementById("grade-select");
+    if(!sel || !sel.options.length) return;
+    var val = "grade_" + g;
+    var ok = Array.prototype.some.call(sel.options, function(o){ return o.value === val; });
+    if(!ok) return;
+    sel.value = val;
+    sel.dispatchEvent(new Event("change"));
+    sel.style.display = "none";
+    var lab = document.querySelector('label[for="grade-select"]');
+    if(lab) lab.style.display = "none";
+  }
+  if(document.readyState === "complete") setTimeout(apply, 0);
+  else window.addEventListener("load", function(){ setTimeout(apply, 0); });
+})();
+</script>
+<script src="/games/chapter-topics.js"></script>
+<script src="/games/ai-questions.js"></script>
+<script>
+/* EducAlvator: AI-generated questions for the chosen grade (see ai-questions.js). */
+(function(){
+  try{
+    var g=new URLSearchParams(location.search).get("grade");
+    if(!CURRICULUM["grade_"+g]) return;
+    // Grades share topic objects here, so give this grade its own before adding chapters.
+    var gradeObj=CURRICULUM["grade_"+g]=Object.assign({},CURRICULUM["grade_"+g]);
+    var sel=document.getElementById("topic-select");
+    var builtIn=Object.keys(gradeObj);
+    // Textbook chapters as extra topics; until the AI set arrives they fall back to this grade's built-in questions.
+    var fallback=[];
+    builtIn.forEach(function(k){ fallback=fallback.concat(gradeObj[k]); });
+    var chapters=window.EduChapters?EduChapters.addTo(g,"english",function(k,title){ gradeObj[k]=fallback.slice(); TOPIC_LABELS[k]=title; }):[];
+    // Textbook chapters are the only topics where the grade has them.
+    if(chapters.length) builtIn.forEach(function(k){ delete gradeObj[k]; });
+    EduAI.attach({
+      subject:"english", grade:g,
+      keys:chapters.length?chapters.slice(0,1):builtIn, // other chapters are fetched when chosen
+      label:function(k){ return (window.EduChapters&&EduChapters.aiLabel(k))||(typeof TOPIC_LABELS!=="undefined"&&TOPIC_LABELS[k])||k; },
+      apply:function(k,qs){ gradeObj[k]=qs; },
+      selected:function(){ return sel.value==="all"?builtIn:(gradeObj[sel.value]?[sel.value]:[]); },
+      buttons:["start-btn","retry-btn"]
+    });
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

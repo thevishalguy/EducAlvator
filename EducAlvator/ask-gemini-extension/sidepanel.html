@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EduPanel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1 class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>EduPanel
+      </h1>
+      <div class="topbar-actions">
+        <button id="reloadButton" class="icon-button" type="button" title="Read this again" aria-label="Read this again" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 6.3M20 5v6h-6" /></svg>
+        </button>
+        <div class="history">
+          <button id="historyButton" class="icon-button" type="button" title="Chat history" aria-label="Chat history" aria-haspopup="menu" aria-expanded="false" aria-controls="historyMenu">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3 4v4h4M12 7.5V12l3 2" /></svg>
+          </button>
+          <div id="historyMenu" class="history-menu" role="menu" aria-label="Chat history" hidden></div>
+        </div>
+        <button id="closeButton" class="icon-button" type="button" title="Close EduPanel" aria-label="Close EduPanel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <section id="statusBar" class="status" data-state="idle" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span class="status-text">
+        <strong id="statusLabel">Checking tab...</strong>
+        <span id="statusDetail" class="status-detail"></span>
+      </span>
+      <button id="fileAccessButton" class="text-button" type="button" hidden>Open settings</button>
+    </section>
+
+    <main id="messages" class="messages" aria-live="polite">
+      <div id="welcome" class="welcome" hidden>
+        <span class="welcome-logo" aria-hidden="true"></span>
+        <p class="welcome-title">Welcome to EduPanel</p>
+      </div>
+      <div id="emptyState" class="empty" hidden>
+        <p id="emptyTitle" class="empty-title"></p>
+        <p id="emptyBody" class="empty-body"></p>
+      </div>
+    </main>
+
+    <form id="composer" class="composer">
+      <div class="composer-box">
+        <textarea id="questionInput" rows="1" aria-label="Your question" disabled></textarea>
+        <button id="micButton" class="mic-button" type="button" title="Speak your question" aria-label="Speak your question" aria-pressed="false" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+        </button>
+        <button id="voiceButton" class="mic-button" type="button" title="Voice mode: talk with EduPanel hands-free" aria-label="Start voice mode" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 18 0M3 12v3a2 2 0 0 0 2 2h1v-5H5a2 2 0 0 0-2 0Zm18 0v3a2 2 0 0 1-2 2h-1v-5h1a2 2 0 0 1 2 0Z" /></svg>
+        </button>
+        <button id="sendButton" class="send-button" type="submit" title="Send" aria-label="Send" disabled>
+          <svg class="icon-send" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+          <svg class="icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5" /></svg>
+        </button>
+      </div>
+      <div class="composer-footer">Shift+Enter for a new line</div>
+    </form>
+
+    <section id="voicePanel" class="voice" role="dialog" aria-modal="true" aria-label="Voice mode" data-phase="listening" hidden>
+      <button id="voiceClose" class="voice-close" type="button" title="End voice chat" aria-label="End voice chat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+      <p class="voice-kicker">Voice Mode</p>
+      <button id="voiceOrb" class="voice-orb" type="button" aria-label="Done speaking">
+        <span class="voice-ring" aria-hidden="true"></span>
+        <span class="voice-core" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+        </span>
+      </button>
+      <p id="voiceLabel" class="voice-label" aria-live="polite">Listening…</p>
+      <p id="voiceHint" class="voice-hint">Ask anything. Tap the orb when you finish.</p>
+      <div class="voice-text">
+        <p id="voiceHeard" class="voice-heard"></p>
+        <p id="voiceReply" class="voice-reply"></p>
+      </div>
+      <button id="voiceEnd" class="voice-end" type="button">End voice chat</button>
+    </section>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>
